@@ -20,19 +20,15 @@ all_words = strsplit(sentences_concatenated);
 dictionary = unique(all_words);
 n_unique_words = length(dictionary);
 
-% No. of postiive sentences that a word appears in
+% No. of positive sentences that a word appears in
 cell_of_zeros = num2cell(zeros(1, n_unique_words));
 pos_counts = containers.Map(dictionary, cell_of_zeros);
 
-% No. of negulative sentences that a word appears in
+% No. of negative sentences that a word appears in
 neg_counts = containers.Map(dictionary, cell_of_zeros);
-
-fprintf('No. of unique words: %i\n', n_unique_words);
-fprintf('No. of sentences in training set: %i\n', length(sentences));
 
 %% Populate likelihoods with a hash table
 
-fprintf('Calculating marginal probabilities of words... '); tic;
 for si = 1:length(sentences)
 
     % Get unique words in this sentence
