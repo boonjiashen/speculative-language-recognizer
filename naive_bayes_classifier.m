@@ -11,7 +11,7 @@ for si = 1: size(labeled_sentences, 1)
     sentence = strtrim(sentence);
     labeled_sentences{si, 1} = sentence;
 end
-fprintf('done.\n'); toc;
+fprintf('done in %f sec.\n', toc);
 
 %% Partition dataset to training and test set
 
@@ -30,74 +30,20 @@ test_size = min(500, test_size);
 Xtest = labeled_sentences(train_size+1:train_size+test_size, 1);
 ytest = cell2mat(labeled_sentences(train_size+1:train_size+test_size, 2));
 
-%% Get unique set of words
-
-% Get unique words (we call this the dictionary)
-sentences_concatenated = strjoin(Xtrain');  % Adds a space delimiter
-all_words = strsplit(sentences_concatenated);
-dictionary = unique(all_words);
-
-%% Calculate P(speculative | word)
-
-n_unique_words = length(dictionary);
-
-% No. of speculative sentences that a word appears in
-cell_of_zeros = num2cell(zeros(1, n_unique_words));
-spec_counts = containers.Map(dictionary, cell_of_zeros);
-
-% No. of unspeculative sentences that a word appears in
-unspec_counts = containers.Map(dictionary, cell_of_zeros);
-
-fprintf('No. of unique words: %i\n', n_unique_words);
-fprintf('No. of sentences in training set: %i\n', length(Xtrain));
-
-%% Populate marginal probabilities with a hash table
+%% Calculate marginal probability of words
 
 fprintf('Calculating marginal probabilities of words... '); tic;
-for si = 1:length(Xtrain)
-
-    % Get unique words in this sentence
-    sentence = Xtrain{si};
-    words = unique(strsplit(sentence));
-
-    for wi = 1:length(words)
-        word = words{wi};
-        if ytrain(si)
-            spec_counts(word) = spec_counts(word) + 1;
-        else
-            unspec_counts(word) = unspec_counts(word) + 1;
-        end
-    end
-    
-end
-
-% Marginal probabilities, P(word | speculative) & P(word | unspeculative)
-spec_logmarginals = containers.Map(dictionary, cell_of_zeros);
-unspec_logmarginals = containers.Map(dictionary, cell_of_zeros);
-
-% Normalize marginal probabilities
-% We take the log10 of these probabilities so they don't go too close to
-% zero.
-% We also perform Laplacian smoothing by hallucinating 1 example from each
-% class.
-n_speculative = sum(ytrain);
-n_unspeculative = length(Xtrain) - n_speculative;
-for wi = 1:length(dictionary)
-    word = dictionary{wi};
-    
-    % P(word | spec) = #(spec sentences with word) / #(spec sentences)
-    spec_logmarginals(word) = log10((spec_counts(word)+1) / (n_speculative+2));
-    
-    % P(word | unspec) = #(unspec sentences with word) / #(unspec sentences)
-    unspec_logmarginals(word) = log10((unspec_counts(word)+1) / (n_unspeculative+2));
-end
-
-fprintf('done.\n'); toc;
+smooth_term = 1;
+[pos_loglikes, neg_loglikes] = calculate_word_likelihoods( ...
+        Xtrain, ytrain, smooth_term);
+fprintf('done in %f sec.\n', toc);
 
 %% Test classifier
 
 fprintf('Testing %i examples... ', test_size); tic;
 predictions = zeros(test_size, 1);
+dictionary = pos_loglikes.keys;
+n_sentences_with_new_words = 0;
 for si = 1:test_size
     
     % Get unique words in this sentence
@@ -107,17 +53,25 @@ for si = 1:test_size
     % Only look for words that are in the dictionary
     words_in_dictionary = words(ismember(words, dictionary));
     
+    has_new_words = length(words) ~= length(words_in_dictionary);
+    n_sentences_with_new_words = n_sentences_with_new_words + has_new_words;
+
     % Get non-normalize posterior probability for speculative language
-    nonnorm_spec = sum(cell2mat(spec_logmarginals.values(words_in_dictionary)));
+    curr_pos_loglikes = pos_loglikes.values(words_in_dictionary);
+    nonnorm_pos = sum(cell2mat(curr_pos_loglikes));
     
     % Get non-normalize posterior probability for unspeculative language
-    nonnorm_unspec = sum(cell2mat(unspec_logmarginals.values(words_in_dictionary)));
+    curr_neg_loglikes = neg_loglikes.values(words_in_dictionary);
+    nonnorm_neg = sum(cell2mat(curr_neg_loglikes));
     
     % The predicted class is the argmax of the non-normalized probabilities
     % over the possible classes (i.e. speculative or non-speculative)
-    prediction = nonnorm_spec > nonnorm_unspec;
-    
+    prediction = nonnorm_pos > nonnorm_neg;
+
     predictions(si) = prediction;
 
 end
-fprintf('done.\n'); toc;
+fprintf('done in %f sec.\n', toc);
+
+accuracy = sum(predictions == ytest) / length(predictions);
+fprintf('Accuracy = %f\n', accuracy);
