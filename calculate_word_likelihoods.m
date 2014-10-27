@@ -62,11 +62,11 @@ for wi = 1:length(dictionary)
     
     % P(word | pos) = #(pos sentences with word) / #(pos sentences)
     pos_loglikes(word) = log10((pos_counts(word)+smooth_term) / ...
-        (n_pos + 2*smooth_term));
+        (n_pos + n_unique_words*smooth_term));
     
     % P(word | neg) = #(neg sentences with word) / #(neg sentences)
     neg_loglikes(word) = log10((neg_counts(word)+smooth_term) / ...
-        (n_neg + 2*smooth_term));
+        (n_neg + n_unique_words*smooth_term));
 end
 
 end
