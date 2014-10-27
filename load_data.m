@@ -19,7 +19,7 @@ fprintf('Constrained to this no. of sentences: %i\n', n_sentences);
 
 % mx2 cell containing sentences as MATLAB str in the first column and the
 % true label in the second column (1 if sentence is speculative, 0 otherwise)
-labeled_sentences = cell(n_sentences, 1);
+labeled_sentences = cell(n_sentences, 2);
 
 % Parse sentence elements
 for i=1:n_sentences

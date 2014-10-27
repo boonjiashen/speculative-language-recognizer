@@ -1,4 +1,4 @@
-% Train a Naive Bayes Classifier to classifiy speculative language
+% Train a Naive Bayes Classifier to classify speculative language
 
 %% Pre-process sentences
 % Remove commas, periods, brackets () from all sentences
