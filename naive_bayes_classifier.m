@@ -44,6 +44,10 @@ fprintf('Testing %i examples... ', test_size); tic;
 predictions = zeros(test_size, 1);
 dictionary = pos_loglikes.keys;
 n_sentences_with_new_words = 0;
+p_pos = sum(ytrain == 1)/size(ytrain, 1);
+p_neg = 1 - p_pos;
+log_p_pos = log10(p_pos);
+log_p_neg = log10(p_neg);
 for si = 1:test_size
     
     % Get unique words in this sentence
@@ -59,10 +63,12 @@ for si = 1:test_size
     % Get non-normalize posterior probability for speculative language
     curr_pos_loglikes = pos_loglikes.values(words_in_dictionary);
     nonnorm_pos = sum(cell2mat(curr_pos_loglikes));
+    nonnorm_pos = nonnorm_pos + log_p_pos;
     
     % Get non-normalize posterior probability for unspeculative language
     curr_neg_loglikes = neg_loglikes.values(words_in_dictionary);
     nonnorm_neg = sum(cell2mat(curr_neg_loglikes));
+    nonnorm_neg = nonnorm_neg + log_p_neg;
     
     % The predicted class is the argmax of the non-normalized probabilities
     % over the possible classes (i.e. speculative or non-speculative)

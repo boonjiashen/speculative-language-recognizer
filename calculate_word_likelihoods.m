@@ -29,11 +29,18 @@ neg_counts = containers.Map(dictionary, cell_of_zeros);
 
 %% Populate likelihoods with a hash table
 
+n_pos_words = 0;
+n_neg_words = 0;
 for si = 1:length(sentences)
 
     % Get unique words in this sentence
     sentence = sentences{si};
-    words = unique(strsplit(sentence));
+    words = strsplit(sentence);
+    if labels(si)
+        n_pos_words = n_pos_words + length(words);
+    else
+        n_neg_words = n_neg_words + length(words);
+    end
 
     for wi = 1:length(words)
         word = words{wi};
@@ -43,7 +50,7 @@ for si = 1:length(sentences)
             neg_counts(word) = neg_counts(word) + 1;
         end
     end
-    
+
 end
 
 % Likelihoods, P(word | pos) & P(word | neg)
@@ -55,18 +62,16 @@ neg_loglikes = containers.Map(dictionary, cell_of_zeros);
 % zero.
 % We also perform Laplacian smoothing by hallucinating 1 example from each
 % class.
-n_pos = sum(labels);
-n_neg = sum(~labels);
 for wi = 1:length(dictionary)
     word = dictionary{wi};
     
     % P(word | pos) = #(pos sentences with word) / #(pos sentences)
     pos_loglikes(word) = log10((pos_counts(word)+smooth_term) / ...
-        (n_pos + n_unique_words*smooth_term));
+        (n_pos_words + n_unique_words*smooth_term));
     
     % P(word | neg) = #(neg sentences with word) / #(neg sentences)
     neg_loglikes(word) = log10((neg_counts(word)+smooth_term) / ...
-        (n_neg + n_unique_words*smooth_term));
+        (n_neg_words + n_unique_words*smooth_term));
 end
 
 end
