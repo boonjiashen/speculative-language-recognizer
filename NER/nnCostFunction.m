@@ -6,6 +6,10 @@ function [J, grad] = nnCostFunction(nn_params, ...
 %NNCOSTFUNCTION Implements the neural network cost function for a two layer
 %neural network which performs classification, for a single training
 %example
+%The activation function for the hidden layer is the hyperbolic tangent
+%function, and that of the output layer is a sigmoid function. The error
+%function is binary cross entropy.
+%
 %   [J grad] = NNCOSTFUNCTON(nn_params, hidden_layer_size, num_labels, ...
 %   y, lambda) computes the cost and gradient of the neural network. The
 %   parameters for the neural network are "unrolled" into the vector
@@ -54,7 +58,7 @@ x_grad = zeros(size(x));
 % Notation: s_l is the no. of units (excluding bias) in the l-layer
 a1 = x; % activation of input layer - size s_1 x 1
 z2 = Theta1 * [1; a1]; % input to hidden layer - size s_2 x 1
-a2 = sigmoid(z2); % activation of hidden layer - size s_2 x 1
+a2 = tanh(z2); % activation of hidden layer - size s_2 x 1
 z3 = Theta2 * [1; a2]; % input to output layer - size s_3 x 1
 a3 = sigmoid(z3); % activation of output layer - size s_3 x 1
 
@@ -75,7 +79,7 @@ J = J + lambda / 2 * (sumTheta1 + sumTheta2);
 % Get gradients by interating over examples
 delta3 = a3 - y_1hot;
 Theta2_grad = delta3 * [1; a2]'; % size of Theta2
-delta2 = (Theta2(:,2:end)'*delta3) .* sigmoidGradient(z2);
+delta2 = (Theta2(:,2:end)'*delta3) .* tanhGradient(z2);
 Theta1_grad = delta2 * [1; a1]'; % size of Theta1
 x_grad = Theta1(:, 2:end)' * delta2;
 
