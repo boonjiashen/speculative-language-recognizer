@@ -199,5 +199,18 @@ for ei = ind_range
     predictions(ei - ind_range(1) + 1) = prediction;
 end
 
+%% Calculate performance metrics on test set
+
+% Tally number of true/false positives/negatives
+tp = sum(predictions(y_test == 1) == 1);
+tn = sum(predictions(y_test == 0) == 0);
+fp = sum(predictions(y_test == 0) == 1);
+fn = sum(predictions(y_test == 1) == 0);
+
+precision = tp / (tp + fn);
+recall = tp / (tp + fp);
+F1 = 2 * (precision * recall) / (precision + recall);
+
 test_accuracy = sum(predictions == y_test) / length(predictions);
 fprintf('Test accuracy = %.1f%%\n', test_accuracy * 100);
+fprintf('Precision = %.2f | recall = %.2f | F1 = %.2f\n', precision, recall, F1);
