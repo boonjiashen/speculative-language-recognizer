@@ -152,3 +152,14 @@ for ei = context_size + 1: size(trainData, 1) - context_size
         fprintf('Done with example %i\n', ei);
     end
 end
+
+%% Plot change in error (a.k.a cost)
+
+step_size = 3000;  % no. of iterations that we summarize into a point
+
+% Chop off the tail of the matrix so that we can average more easily
+costs_cropped = costs(1: floor(length(costs) / step_size) * step_size);
+
+% Average cost for each step size
+ave_costs = mean(reshape(costs_cropped, step_size, []));
+ 
