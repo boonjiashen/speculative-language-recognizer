@@ -90,29 +90,9 @@ for ei = context_size + 1: size(trainData, 1) - context_size
     % Grab label of the center word
     y = trainData{ei, 2};
 
-    % Look for fullstops to signify start/end of sentence
-    is_fullstop = strcmp('.', words);
-    fullstop_inds = find(is_fullstop);  % indices of fullstop word
-        
-    % If fullstop left of center word, everything from the fullstop to the
-    % left is padded with a start pad
-    if any(fullstop_inds <= context_size)    
-        % Get right-most index that's still left of center word
-        right_ind = max(fullstop_inds(fullstop_inds <= context_size));
-        
-        words([1:windowSize] <= right_ind) = {'<s>'};
-    end
-    
-    % If fullstop is at center word or after, everything to the right of
-    % the fullstop is padded with a end pad
-    if any(fullstop_inds > context_size)
-        
-        % Get left-most index that's still at or to the right of the center
-        % word
-        left_ind = min(fullstop_inds(fullstop_inds > context_size));
-        
-        words([1:windowSize] > left_ind) = {'</s>'};
-    end
+    % Signify the start and end of the sentence (if any) with appropriate
+    % tokens
+    words = replace_sentence_start_and_end(words, '<s>', '</s>');
     
     % Grab word vectors to make an input vector
     x = zeros(inputSize, 1);
