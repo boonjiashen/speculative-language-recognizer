@@ -42,7 +42,9 @@ theta = [Theta1(:); Theta2(:)];
 %%======================================================================
 %% STEP 2: Implement nnCostFunction
 
-some_words = vocab([1, 4, 7]);  % grab some words as a column of cells
+% grab some words as a column of cells
+some_words = vocab(randi(length(vocab), [windowSize 1]));
+
 some_vectors = word2vec.values(some_words);  % grab word vector columns
 x = cell2mat(some_vectors);  % concatenate the vectors and make into a row
 y = 1;  % dummy value
