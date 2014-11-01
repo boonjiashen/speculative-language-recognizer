@@ -3,19 +3,36 @@
 %%======================================================================
 %% STEP 0: Declare parameters
 
-windowSize = 3;  % number of words per window
-inputSize = windowSize * 50;   % number of input units 
+windowSize = 5;  % number of words per window
+n = 50;  % length of one word vector
+inputSize = windowSize * n;   % number of input units 
 hiddenSize = 25;     % number of hidden units 
 outputSize = 1;   % number of output units
 
-lambda = 0;     % weight decay parameter   
+lambda = 0.001;     % weight decay parameter   
+eta = 0.0001;  % learning rate of gradient descent
 
 %%======================================================================
 %% STEP 1: Load vocabulary and initialize word vectors
 
-% Creates a |V|x1 cell array vocab and a hashtable word2vec that maps a
+% Creates a hashtable word2vec, containing |V| keys, that maps a
 % word to its feature column vector
+% Also creates a mx2 cell array trainData that contains labeled words. The
+% first column is a series of sentences broken down into one
+% word/punctuation per cell. The second column is 1 if the word/punctuation
+% is a person, else it's 0.
 load_data;
+
+vocab = word2vec.keys()';  % column cell array of words in word matrix
+unknown_word = 'UUUNKKK';  % special word that replaces words that are in
+                           % training data but not in vocab
+
+% Change words in training data to lower case since the words for the
+% initial feature vectors are also in lower case
+trainData(:, 1) = lower(trainData(:, 1));
+
+% Replace words that aren't in the vocab with the special unknown word
+trainData(~ismember(trainData(:, 1), vocab), 1) = {unknown_word};
 
 %  Obtain random parameters theta
 Theta1 = randInitializeWeights(inputSize, hiddenSize);
@@ -61,13 +78,77 @@ disp(diff); % Should be small. In our implementation, these values are
 %%======================================================================
 %% STEP 4: Train neural network by stochastic gradient descent
 
+% Run gradient descent over training examples
+context_size = (windowSize - 1) / 2;  % no. of words to pad at start
+costs = zeros(1, size(trainData, 1));
+for ei = context_size + 1: size(trainData, 1) - context_size
+% for ei = 5:13
+    
+    % Grab words in window
+    words = trainData(ei - context_size: ei + context_size);
+    
+    % Grab label of the center word
+    y = trainData{ei, 2};
 
-% %%======================================================================
-% %% STEP 5: Visualization 
-% 
-% W1 = reshape(opttheta(1:hiddenSize*inputSize), hiddenSize, inputSize);
-% display_network(W1', 12); 
-% 
-% print -djpeg weights.jpg   % save the visualization to a file 
-% 
-% 
+    % Look for fullstops to signify start/end of sentence
+    is_fullstop = strcmp('.', words);
+    fullstop_inds = find(is_fullstop);  % indices of fullstop word
+        
+    % If fullstop left of center word, everything from the fullstop to the
+    % left is padded with a start pad
+    if any(fullstop_inds <= context_size)    
+        % Get right-most index that's still left of center word
+        right_ind = max(fullstop_inds(fullstop_inds <= context_size));
+        
+        words([1:windowSize] <= right_ind) = {'<s>'};
+    end
+    
+    % If fullstop is at center word or after, everything to the right of
+    % the fullstop is padded with a end pad
+    if any(fullstop_inds > context_size)
+        
+        % Get left-most index that's still at or to the right of the center
+        % word
+        left_ind = min(fullstop_inds(fullstop_inds > context_size));
+        
+        words([1:windowSize] > left_ind) = {'</s>'};
+    end
+    
+    % Grab word vectors to make an input vector
+    x = zeros(inputSize, 1);
+    for wi = 1: windowSize
+        word = words{wi};
+        vector = word2vec(word);
+        x((wi-1) * n + 1: wi * n) = vector;
+    end
+        
+    % Calculate error derivatives w.r.t weights and input vector
+    [cost, grad] = nnCostFunction([theta; x], ...
+        inputSize, hiddenSize, outputSize, y, lambda);
+    
+    % Update weights (this is everything in the gradient vector except the
+    % inputSize no. of elements at the end)
+    dtheta = -eta * grad(1:end - inputSize);
+    theta = theta + dtheta;
+    
+    % Update input vectors
+    dx = grad(end - inputSize + 1: end);
+    for wi = 1: windowSize
+        word = words{wi};
+        
+        % Change in word vector for current word
+        dx_i = -eta * dx((wi - 1) * n + 1: wi * n);
+        
+        % Update word vector in hashtable. This means that if one word
+        % appears multiple times in the window, it'll be updated more than
+        % once.
+        word2vec(word) = word2vec(word) + dx_i;
+    end
+
+    % Remember cost at this iteration for graph plots
+    costs(ei) = cost;
+    
+    if mod(ei, 10000) == 1
+        fprintf('Done with example %i\n', ei);
+    end
+end
