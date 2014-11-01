@@ -25,6 +25,8 @@ load_word_matrix;
 vocab = word2vec.keys()';  % column cell array of words in word matrix
 unknown_word = 'UUUNKKK';  % special word that replaces words that are in
                            % training data but not in vocab
+start_token = '<s>';  % token to represent start of sentence
+end_token = '</s>';  % token to represent end of sentence
                            
 %% STEP 1.2: Load training and test data
 
@@ -107,15 +109,10 @@ for ei = context_size + 1: size(train_data, 1) - context_size
 
     % Signify the start and end of the sentence (if any) with appropriate
     % tokens
-    words = replace_sentence_start_and_end(words, '<s>', '</s>');
+    words = replace_sentence_start_and_end(words, start_token, end_token);
     
     % Grab word vectors to make an input vector
-    x = zeros(inputSize, 1);
-    for wi = 1: windowSize
-        word = words{wi};
-        vector = word2vec(word);
-        x((wi-1) * n + 1: wi * n) = vector;
-    end
+    x = cell2mat(word2vec.values(words'));
         
     % Calculate error derivatives w.r.t weights and input vector
     [cost, grad] = nnCostFunction([theta; x], ...
@@ -158,3 +155,49 @@ costs_cropped = costs(1: floor(length(costs) / step_size) * step_size);
 % Average cost for each step size
 ave_costs = mean(reshape(costs_cropped, step_size, []));
  
+%% Test neural network on test data
+
+% Get weights between input and hidden layer
+Theta1 = reshape(theta(1:hiddenSize * (inputSize + 1)), ...
+                 hiddenSize, (inputSize + 1));
+
+% Get weights between hidden and output layer
+start_ind = 1 + (hiddenSize * (inputSize + 1));
+end_ind = start_ind + outputSize * (hiddenSize + 1) - 1;
+Theta2 = reshape(theta(start_ind: end_ind), ...
+                 outputSize, (hiddenSize + 1));
+
+% Range of indices of interest, in test data. We chop off a bit of the head
+% and tail of the data so as not to worry about boundary conditions
+ind_range = context_size + 1: size(test_data, 1) - context_size;
+
+% Run test data through neural network and compare prediction with true
+% label!
+y_test = cell2mat(test_data(ind_range, 2));
+predictions = zeros(size(y_test));
+for ei = ind_range
+% for ei = 5:13
+    
+    % Grab words in window
+    words = test_data(ei - context_size: ei + context_size);
+    
+    % Grab label of the center word
+    y = test_data{ei, 2};
+
+    % Signify the start and end of the sentence (if any) with appropriate
+    % tokens
+    words = replace_sentence_start_and_end(words, start_token, end_token);
+    
+    % Grab word vectors to make an input vector
+    x = cell2mat(word2vec.values(words'));
+    
+    % Make prediction
+    confidence = sigmoid(Theta2 * [1; tanh(Theta1 * [1; x])]);
+    prediction = confidence > 0.5;
+    
+    % Remember prediction
+    predictions(ei - ind_range(1) + 1) = prediction;
+end
+
+test_accuracy = sum(predictions == y_test) / length(predictions);
+fprintf('Test accuracy = %.1f%%\n', test_accuracy * 100);
