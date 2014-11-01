@@ -6,11 +6,11 @@
 windowSize = 5;  % number of words per window
 n = 50;  % length of one word vector
 inputSize = windowSize * n;   % number of input units 
-hiddenSize = 25;     % number of hidden units 
+hiddenSize = 100;     % number of hidden units 
 outputSize = 1;   % number of output units
 
 lambda = 0.001;     % weight decay parameter   
-eta = 0.0001;  % learning rate of gradient descent
+eta = 0.001;  % learning rate of gradient descent
 
 train_filename = 'data/train';  % file containing labeled training data
 test_filename = 'data/dev';  % file containing labeled test data
@@ -93,53 +93,58 @@ end
 %%======================================================================
 %% STEP 4: Train neural network by stochastic gradient descent
 
+% Indices of training set that we're interested in
+ind_range = context_size + 1: size(train_data, 1) - context_size;
+
 % Run gradient descent over training examples
 context_size = (windowSize - 1) / 2;  % no. of words to pad at start
-costs = zeros(1, size(train_data, 1));
-for ei = context_size + 1: size(train_data, 1) - context_size
-% for ei = 5:13
-    
-    % Grab words in window
-    words = train_data(ei - context_size: ei + context_size);
-    
-    % Grab label of the center word
-    y = train_data{ei, 2};
+n_epochs = 10;  % no. of times we run through the entire training set
+costs = zeros(length(ind_range), n_epochs);  % record training error
+for ei = 1: 10  % iterate over epochs e
+    for ii = ind_range  % iterate over training instances i
 
-    % Signify the start and end of the sentence (if any) with appropriate
-    % tokens
-    words = replace_sentence_start_and_end(words, start_token, end_token);
-    
-    % Grab word vectors to make an input vector
-    x = cell2mat(word2vec.values(words'));
-        
-    % Calculate error derivatives w.r.t weights and input vector
-    [cost, grad] = nnCostFunction([theta; x], ...
-        inputSize, hiddenSize, outputSize, y, lambda);
-    
-    % Update weights (this is everything in the gradient vector except the
-    % inputSize no. of elements at the end)
-    dtheta = -eta * grad(1:end - inputSize);
-    theta = theta + dtheta;
-    
-    % Update input vectors
-    dx = grad(end - inputSize + 1: end);
-    for wi = 1: windowSize
-        word = words{wi};
-        
-        % Change in word vector for current word
-        dx_i = -eta * dx((wi - 1) * n + 1: wi * n);
-        
-        % Update word vector in hashtable. This means that if one word
-        % appears multiple times in the window, it'll be updated more than
-        % once.
-        word2vec(word) = word2vec(word) + dx_i;
-    end
+        % Grab words in window
+        words = train_data(ii - context_size: ii + context_size);
 
-    % Remember cost at this iteration for graph plots
-    costs(ei) = cost;
-    
-    if mod(ei, 10000) == 0
-        fprintf('Done with example %i\n', ei);
+        % Grab label of the center word
+        y = train_data{ii, 2};
+
+        % Signify the start and end of the sentence (if any) with appropriate
+        % tokens
+        words = replace_sentence_start_and_end(words, start_token, end_token);
+
+        % Grab word vectors to make an input vector
+        x = cell2mat(word2vec.values(words'));
+
+        % Calculate error derivatives w.r.t weights and input vector
+        [cost, grad] = nnCostFunction([theta; x], ...
+            inputSize, hiddenSize, outputSize, y, lambda);
+
+        % Update weights (this is everything in the gradient vector except the
+        % inputSize no. of elements at the end)
+        dtheta = -eta * grad(1:end - inputSize);
+        theta = theta + dtheta;
+
+        % Update input vectors
+        dx = grad(end - inputSize + 1: end);
+        for wi = 1: windowSize
+            word = words{wi};
+
+            % Change in word vector for current word
+            dx_i = -eta * dx((wi - 1) * n + 1: wi * n);
+
+            % Update word vector in hashtable. This means that if one word
+            % appears multiple times in the window, it'll be updated more than
+            % once.
+            word2vec(word) = word2vec(word) + dx_i;
+        end
+
+        % Remember cost at this iteration for graph plots
+        costs(ii - ind_range(1) + 1, ei) = cost;
+
+        if mod(ii, 10000) == 0
+            fprintf('Done with epoch %i, instance %i\n', ei, ii);
+        end
     end
 end
 
@@ -148,6 +153,7 @@ end
 step_size = 3000;  % no. of iterations that we summarize into a point
 
 % Chop off the tail of the matrix so that we can average more easily
+costs = costs(:);
 costs_cropped = costs(1: floor(length(costs) / step_size) * step_size);
 
 % Average cost for each step size
@@ -173,14 +179,13 @@ ind_range = context_size + 1: size(test_data, 1) - context_size;
 % label!
 y_test = cell2mat(test_data(ind_range, 2));
 predictions = zeros(size(y_test));
-for ei = ind_range
-% for ei = 5:13
+for ii = ind_range
     
     % Grab words in window
-    words = test_data(ei - context_size: ei + context_size);
+    words = test_data(ii - context_size: ii + context_size);
     
     % Grab label of the center word
-    y = test_data{ei, 2};
+    y = test_data{ii, 2};
 
     % Signify the start and end of the sentence (if any) with appropriate
     % tokens
@@ -194,7 +199,7 @@ for ei = ind_range
     prediction = confidence > 0.5;
     
     % Remember prediction
-    predictions(ei - ind_range(1) + 1) = prediction;
+    predictions(ii - ind_range(1) + 1) = prediction;
 end
 
 %% Calculate performance metrics on test set
