@@ -1,15 +1,10 @@
-% Loads the vocabulary and each word's initial fixed length feature vector
-% Also loads training data in the form of annotated sentences. Each word in
-% every sentence is labeled either a PERSON or not.
+%% Loads the vocabulary and each word's initial fixed length feature vector
 
 % file of feature vectors, one row per feature vector
 vector_filename = 'data/wordVectors.txt';
 
 % file containing vocabulary, one line per word
 words_filename = 'data/vocab.txt';
-
-% file containing training data
-train_filename = 'data/train';
 
 %% Read in vocabulary and their feature vectors
 
@@ -29,7 +24,3 @@ for wi = 1:length(vocab)
     vector = word_vectors(:, wi);
     word2vec(word) = vector;
 end
-
-%% Read in training data
-
-trainData = load_annotated_sentences(train_filename);
