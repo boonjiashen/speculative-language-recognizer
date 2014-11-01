@@ -32,19 +32,4 @@ end
 
 %% Read in training data
 
-% Load training data as strings
-fid = fopen(train_filename);
-trainData = textscan(fid, '%s %s\n');  % first cell is words, second cell is labels
-trainData = horzcat(trainData{:});  % contacenate to mx2 cell array
-fclose(fid);
-
-% Convert labels from strings '0'/'PERSON' to integers 0/1
-for wi = 1: size(trainData, 1)
-    label = trainData{wi, 2};
-    isPerson = strcmp(label, 'PERSON') == 1;
-    if isPerson
-        trainData{wi, 2} = 1;
-    else
-        trainData{wi, 2} = 0;
-    end
-end
+trainData = load_annotated_sentences(train_filename);
