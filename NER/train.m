@@ -100,7 +100,7 @@ ind_range = context_size + 1: size(train_data, 1) - context_size;
 context_size = (windowSize - 1) / 2;  % no. of words to pad at start
 n_epochs = 10;  % no. of times we run through the entire training set
 costs = zeros(length(ind_range), n_epochs);  % record training error
-for ei = 1: 10  % iterate over epochs e
+for ei = 1: n_epochs  % iterate over epochs e
     for ii = ind_range  % iterate over training instances i
 
         % Grab words in window
