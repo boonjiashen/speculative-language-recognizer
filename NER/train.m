@@ -20,10 +20,6 @@ test_filename = 'data/dev';  % file containing labeled test data
 
 % Creates a hashtable word2vec, containing |V| keys, that maps a
 % word to its feature column vector
-% Also creates a mx2 cell array trainData that contains labeled words. The
-% first column is a series of sentences broken down into one
-% word/punctuation per cell. The second column is 1 if the word/punctuation
-% is a person, else it's 0.
 load_word_matrix;
 
 vocab = word2vec.keys()';  % column cell array of words in word matrix
@@ -32,9 +28,12 @@ unknown_word = 'UUUNKKK';  % special word that replaces words that are in
                            
 %% STEP 1.2: Load training and test data
 
-% Load training/test data in the form of annotated sentences. Each word in
+% Load training/test data which are annotated sentences. Each word in
 % every sentence is labeled either a PERSON or not.
-% file containing training data
+% Resulting data are mx2 cell arrays that contains labeled words. The
+% first column is a series of sentences broken down into one
+% word/punctuation per cell. The second column is 1 if the word/punctuation
+% is a person, else it's 0.
 train_data = load_annotated_sentences(train_filename);
 test_data = load_annotated_sentences(test_filename);
 
