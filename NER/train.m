@@ -67,30 +67,28 @@ y = 1;  % dummy value
 
 %%======================================================================
 %% STEP 3: Gradient Checking
-%
-% Hint: If you are debugging your code, performing gradient checking on smaller models 
-% and smaller training sets (e.g., using only 10 training examples and 1-2 hidden 
-% units) may speed things up.
 
-% First, lets make sure your numerical gradient computation is correct for a
-% simple function.  After you have implemented computeNumericalGradient.m,
-% run the following: 
-checkNumericalGradient();
+if false
+    % First, lets make sure your numerical gradient computation is correct for a
+    % simple function.  After you have implemented computeNumericalGradient.m,
+    % run the following: 
+    checkNumericalGradient();
 
-% Now we can use it to check your cost function and derivative calculations
-% for the sparse autoencoder.  
-fun = @(x) nnCostFunction(x, inputSize, hiddenSize, outputSize, y, lambda);
-numgrad = computeNumericalGradient(fun, [theta; x]);
+    % Now we can use it to check your cost function and derivative calculations
+    % for the sparse autoencoder.  
+    fun = @(x) nnCostFunction(x, inputSize, hiddenSize, outputSize, y, lambda);
+    numgrad = computeNumericalGradient(fun, [theta; x]);
 
-% Use this to visually compare the gradients side by side
-disp([numgrad grad]); 
+    % Use this to visually compare the gradients side by side
+    disp([numgrad grad]); 
 
-% Compare numerically computed gradients with the ones obtained from backpropagation
-diff = norm(numgrad-grad)/norm(numgrad+grad);
-disp(diff); % Should be small. In our implementation, these values are
-            % usually less than 1e-9.
+    % Compare numerically computed gradients with the ones obtained from backpropagation
+    diff = norm(numgrad-grad)/norm(numgrad+grad);
+    disp(diff); % Should be small. In our implementation, these values are
+                % usually less than 1e-9.
 
-            % When you got this working, Congratulations!!! 
+                % When you got this working, Congratulations!!! 
+end
 
 %%======================================================================
 %% STEP 4: Train neural network by stochastic gradient descent
