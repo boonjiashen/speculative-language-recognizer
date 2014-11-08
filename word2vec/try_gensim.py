@@ -3,10 +3,9 @@
 import gensim
 import numpy as np
 import scipy.cluster.vq  # for K-means clustering of word vectors
-from bs4 import BeautifulSoup
-
-# Filename of text file
-filename = '../data/abstracts.xml'
+from bs4 import BeautifulSoup  # to parse XML
+import nltk  # to split plain text into sentences
+import itertools
 
 def get_sentences_from_Bioscope(filename):
     "Return a list of sentences given a BioScope XML filename."
@@ -16,14 +15,48 @@ def get_sentences_from_Bioscope(filename):
     textblock = fid.read()
     fid.close()
     soup = BeautifulSoup(textblock)
-    sentences = (tag.get_text() for tag in soup.find_all('sentence'))
+    sentences = [tag.get_text() for tag in soup.find_all('sentence')]
 
     return sentences
 
-sentences = get_sentences_from_Bioscope(filename)
+def get_sentences_from_plain_text_file(filename):
+    "Return a list of sentences given a plan text file"
+
+    # Get a list of sentences from a plain text file
+    # Source:
+    # http://stackoverflow.com/questions/4576077/python-split-text-on-sentences
+    fid = open(filename)
+    textblock = fid.read()
+    fid.close()
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+    sentences = tokenizer.tokenize(textblock.lower())
+
+    return sentences
+
+def lower_tokenized_sentences(generator):
+    """Makes sentences of a sentence generator lowercase
+
+    Assumes that the input generator generates sentences, each sentence being a
+    list of words.
+    """
+    for sentence in generator:
+        yield [word.lower() for word in sentence]
+
+#sentences = get_sentences_from_Bioscope('../data/abstracts.xml')
+#sentences = get_sentences_from_plain_text_file('data/austen-emma.txt')
+
+# Get sentences from all books in the NLTK corpus, should be about 100K
+# sentences
+filenames = nltk.corpus.gutenberg.fileids()
+generators = [nltk.corpus.gutenberg.sents(filename) for filename in filenames]
+sentences = itertools.chain(*generators)
+sentences = [i for i in lower_tokenized_sentences(sentences)]
+# for some reason using generators rather than a list doesn't work when you
+# feed into Word2Vec
+#sentences = lower_tokenized_sentences(sentences
 
 # Train word2vec model
-model = gensim.models.word2vec.Word2Vec((i.split() for i in sentences),
+model = gensim.models.word2vec.Word2Vec(sentences,
         size=50,
         min_count=3)
 
