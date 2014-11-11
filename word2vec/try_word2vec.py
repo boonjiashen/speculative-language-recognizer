@@ -42,19 +42,38 @@ def lower_tokenized_sentences(generator):
     for sentence in generator:
         yield [word.lower() for word in sentence]
 
+verbose = True  # True if you want to print stages that the script is at during
+                # run time
 #sentences = get_sentences_from_Bioscope('../data/abstracts.xml')
 #sentences = get_sentences_from_plain_text_file('data/austen-emma.txt')
 
+class GutenbergSentences(object):
+    """Generator object that yields lists of words from novels in the NLTK lib 
+
+    >>> # Get generator
+    >>> sentences = GutenbergSentences('austen-emma.txt')
+    >>> # Print one list of words per iteration
+    >>> for sentence in sentences: print sentence
+    """
+    def __init__(self, filenames):
+        self.filenames = filenames
+    def __iter__(self):
+        for filename in filenames:
+            for sentence in nltk.corpus.gutenberg.sents(filename):
+                yield sentence
+
 # Get sentences from all books in the NLTK corpus, should be about 100K
 # sentences
-filenames = nltk.corpus.gutenberg.fileids()
-generators = [nltk.corpus.gutenberg.sents(filename) for filename in filenames]
-sentences = itertools.chain(*generators)
-sentences = [i for i in lower_tokenized_sentences(sentences)]
 # for some reason using generators rather than a list doesn't work when you
 # feed into Word2Vec
-#sentences = lower_tokenized_sentences(sentences
+filenames = nltk.corpus.gutenberg.fileids()
+sentences = GutenbergSentences(filenames)
+#sentences = [sentence
+        #for filename in filenames
+        #for sentence in nltk.corpus.gutenberg.sents(filename)]
 
+print('Training with %i novel%s from Gutenberg...' %  \
+        (len(filenames), 's' if len(filenames) > 1 else ''))
 # Train word2vec model
 model = gensim.models.word2vec.Word2Vec(sentences,
         size=50,
