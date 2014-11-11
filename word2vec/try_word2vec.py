@@ -53,11 +53,13 @@ class GutenbergSentences(object):
     """Generator object that yields lists of words from novels in the NLTK lib 
 
     >>> # Get generator
-    >>> sentences = GutenbergSentences('austen-emma.txt')
+    >>> sentences = GutenbergSentences(['austen-emma.txt', 'austen-persuasion'])
     >>> # Print one list of words per iteration
     >>> for sentence in sentences: print sentence
     """
     def __init__(self, filenames):
+        """Takes in a list of filenames recognized by
+        ntlk.corpus.gutenberg.sents"""
         self.filenames = filenames
     def __iter__(self):
         for filename in filenames:
@@ -72,7 +74,7 @@ if __name__ == "__main__":
 
     # Get sentences from all books in the NLTK corpus, should be about 100K
     # sentences
-    filenames = nltk.corpus.gutenberg.fileids()[:1]
+    filenames = nltk.corpus.gutenberg.fileids()[:2]
     get_sentences = lambda: lower_tokenized_sentences(GutenbergSentences(filenames))
 
     if verbose:
