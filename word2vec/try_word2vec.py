@@ -3,22 +3,22 @@
 import gensim
 import numpy as np
 import scipy.cluster.vq  # for K-means clustering of word vectors
-from bs4 import BeautifulSoup  # to parse XML
+#from bs4 import BeautifulSoup  # to parse XML
 import nltk  # to split plain text into sentences
 import itertools
 
 
-def get_sentences_from_Bioscope(filename):
-    "Return a list of sentences given a BioScope XML filename."
+#def get_sentences_from_Bioscope(filename):
+    #"Return a list of sentences given a BioScope XML filename."
 
-    # Load a list of sentences
-    fid = open(filename)
-    textblock = fid.read()
-    fid.close()
-    soup = BeautifulSoup(textblock)
-    sentences = [tag.get_text() for tag in soup.find_all('sentence')]
+    ## Load a list of sentences
+    #fid = open(filename)
+    #textblock = fid.read()
+    #fid.close()
+    #soup = BeautifulSoup(textblock)
+    #sentences = [tag.get_text() for tag in soup.find_all('sentence')]
 
-    return sentences
+    #return sentences
 
 
 def get_sentences_from_plain_text_file(filename):
@@ -62,7 +62,7 @@ class GutenbergSentences(object):
         ntlk.corpus.gutenberg.sents"""
         self.filenames = filenames
     def __iter__(self):
-        for filename in filenames:
+        for filename in self.filenames:
             for sentence in nltk.corpus.gutenberg.sents(filename):
                 yield sentence
 
