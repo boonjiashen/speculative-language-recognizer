@@ -6,3 +6,9 @@ AUTHOR
 --------------------
 Jia-Shen Boon <boon@cs.wisc.edu>
 Akshay Sood <sood@cs.wisc.edu>
+
+
+DATASET
+--------------------
+We use biomedical data from the BioScope corpus
+http://www.inf.u-szeged.hu/rgai/bioscope
