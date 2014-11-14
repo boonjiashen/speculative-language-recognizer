@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 class get_tokenized_sentences_from_Bioscope(object):
     """Generate tokenized sentences given BioScope XML filenames.
     
+    Each tokenized sentence is a list of words, e.g. ['I', 'ate', 'food'] is a
+    tokenized sentence.
     >>> for sentence in get_sentences_from_Bioscope(['abstracts.xml']):
     ...     print sentence
     """
@@ -39,8 +41,7 @@ if __name__ == "__main__":
                     # run time
 
     # Filenames of BioScope XML files
-    filenames = ["../data/abstracts.xml", "../data/abstracts_pmid.xml",
-            "../data/full_papers.xml"]
+    filenames = ["../data/abstracts.xml", "../data/full_papers.xml"]
 
     # Get tokenized sentences from BioScope corpus
     tokenized_sentences = get_tokenized_sentences_from_Bioscope(filenames)
@@ -52,8 +53,10 @@ if __name__ == "__main__":
                 len([i for i in get_sentences()])
 
     # Train word2vec model
+    word_vector_length = 50  # Length of a single word vector
+    min_word_count = 5  # Min count to allow a word in the vocabulary
     model = gensim.models.Word2Vec(
-            size=50,
-            min_count=5)
+            size=word_vector_length,
+            min_count=min_word_count)
     model.build_vocab(get_sentences())
     model.train(get_sentences())
