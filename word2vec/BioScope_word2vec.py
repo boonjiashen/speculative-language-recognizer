@@ -80,3 +80,20 @@ if __name__ == "__main__":
             min_count=min_word_count)
     model.build_vocab(get_sentences())
     model.train(get_sentences())
+    
+
+    ######################### Test model qualitatively ######################## 
+
+    test_words = ['blood', 'demonstrated']
+    for test_word in test_words:
+        if test_word not in model.vocab:
+            print 'Test word "%s" not in vocab' % test_word
+            continue
+
+        # Get test_words similar to this test test_word
+        similar_words = [word
+                for word, similarity in model.most_similar(test_word)]
+
+        # Print similar words
+        print 'Words similar to "%s":' % test_word
+        print '\t', ' '.join(similar_words)
