@@ -4,6 +4,16 @@ Each line printed is in the format: INT WORD1 WORD2 WORD3...
 where INT is 0 for a non-speculative phrase and 1 for a speculative phrase.
 WORD1 WORD2 etc are the corresponding phrase that has been tokenized and
 separated by spaces. These tokens may be words or punctuation.
+
+Troubleshooting
+--------------------
+If you're piping the output of this file into another file, e.g.
+>> python extract_labeled_phrases.py data.xml > data.txt
+you may encounter a UnicodeEncodeError because the default encoding of Python
+2.7 is not set. In that case, try the following
+>> PYTHONIOENCODING=UTF-8 python extract_labeled_phrases.py data.xml > data.txt
+Resource:
+http://stackoverflow.com/questions/4545661/unicodedecodeerror-when-redirecting-to-file
 """
 
 import nltk
