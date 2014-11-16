@@ -57,19 +57,26 @@ if __name__ == "__main__":
     ######################### Construct datasets ############################## 
 
     # Load classes and tokenized sentences from file
+    min_len = 5  # min length of phrase to be trained
+                 # For some reason doc2vec cannot train phrases with less
+                 # than 5 words/punctuation
     classes, tokenized_sentences = [], []
     with open(filename, 'r') as fid:
         for line in fid:
             tokens = line.split()
 
-            # Extract class of sentence (first token of line)
-            assert tokens[0] in ['0', '1']
-            class_ = int(tokens[0])
-            classes.append(int(tokens[0]))
+            # Check that sentence is long enough
+            phrase_len = len(tokens) - 1
+            if phrase_len < min_len: continue
 
             # Extract tokenized sentence (all tokens after first one)
             sentence = tokens[1:]
             tokenized_sentences.append(sentence)
+
+            # Extract class of sentence (first token of line)
+            assert tokens[0] in ['0', '1']
+            class_ = int(tokens[0])
+            classes.append(int(tokens[0]))
 
     # Decide which example in dataset goes to training or test set
     test_proportion = 0.2  # Proportion given to test set
