@@ -1,0 +1,5 @@
+This is the RNTN implementation using Eclipse for speculative language recognizer.
+
+Setup notes:
+
+1) The Stanford NLP .jar file stanford-corenlp-3.5.0-models.jar is too big for github, so we need to reference it externally (Right-click rntn in Package Explorer -> Build Path -> Add External Archives). The paths is system-specific, so you need to change this to point to the .jar in your system. This will change the .classpath file for the project, DO NOT check it in or it will break else's setup.
