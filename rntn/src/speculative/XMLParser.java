@@ -71,7 +71,9 @@ public class XMLParser {
                 }
             }
             // add sentence and its the list of its speculative cues to 'sentences'
-            sentences.add(new Sentence(words, spec));
+            // Label 1 speculative, 0 for non-speculative
+            String label = (spec.isEmpty()) ? "0" : "1";
+            sentences.add(new Sentence(words, spec, label, "0"));
         }
     }
 }
