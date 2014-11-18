@@ -2,7 +2,6 @@ package speculative;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -14,42 +13,11 @@ import org.w3c.dom.NodeList;
 
 public class XMLParser {
 
-    public static void main(String[] args) throws Exception {
-
-        String filename = null;
-
-        for (int argIndex = 0; argIndex < args.length; argIndex++) {
-            if (args[argIndex].equalsIgnoreCase("-input")) {
-                filename = args[++argIndex];
-            } else {
-                System.err.println("Unknown argument " + args[argIndex]);
-                System.exit(2);
-            }
-        }
-
-        if (filename == null) {
-            filename = "res/abstracts.xml";
-        }
-
-        // List of sentences along with cue phrases (if any)
-        List<Sentence> sentences = new ArrayList<Sentence>();
-        // Parse the XML and add the processed data to sentences
-        parseXML(filename, sentences);
-        // Generate training/test data
-        Collections.shuffle(sentences);
-        int trainingSize = sentences.size()/2;
-        int testSize = 500;
-        List<Sentence> trainingData = sentences.subList(0, trainingSize);
-        List<Sentence> testData = sentences.subList(trainingSize, trainingSize + testSize);
-        // Generate the output in required format
-        outputText(trainingData);
-    }
-
     /*
      * Parses the XML file <filename>
      * Adds the sentences and their cues to 'sentences'
      */
-    private static void parseXML(String filename, List<Sentence> sentences) throws Exception {
+    public static void parseXML(String filename, List<Sentence> sentences) throws Exception {
         File file = new File(filename);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
@@ -104,50 +72,6 @@ public class XMLParser {
             }
             // add sentence and its the list of its speculative cues to 'sentences'
             sentences.add(new Sentence(words, spec));
-        }
-    }
-
-    /*
-     * Prints labeled sentences/cue phrases in format accepted by 
-     * edu.stanford.nlp.sentiment.BuildBinarizedDataset.main
-     */
-    private static void outputText(List<Sentence> sentences) {
-        for (int i = 0; i < sentences.size(); i++) {
-            Sentence sentence = sentences.get(i);
-            String[] words = sentence.words;
-            List<Integer[]> spec = sentence.spec;
-            boolean speculative = !spec.isEmpty();
-            // Label 1 if speculative, 0 if not
-            String label = speculative ? "1" : "0";
-            System.out.print(label);
-            for (String word : words) {
-                System.out.print(" " + word);
-            }
-            System.out.println();
-            if (speculative) {
-                for (Integer[] arr : spec) {
-                    System.out.print(label);
-                    for (int j = arr[0]; j <= arr[1]; j++) {
-                        System.out.print(" " + words[j]);
-                    }
-                    System.out.println();
-                }
-            }
-            System.out.println();
-        }
-    }
-
-    /*
-     * Represents a sentence as a string array and a list of cue start/end index pairs
-     */
-    public static class Sentence {
-
-        public String[] words = null;
-        public List<Integer[]> spec = null;
-
-        public Sentence(String[] words, List<Integer[]> spec) {
-            this.words = words;
-            this.spec = spec;
         }
     }
 }
