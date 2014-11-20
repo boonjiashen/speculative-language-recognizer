@@ -9,9 +9,13 @@ Instructions to compare baseline algorithms
 Troubleshooting
 ------------------------------------------------------------
 When piping the labeled phrases to a file, e.g.
+
     >> python extract_labeled_phrases.py data.xml > data.txt
+
 you may encounter a UnicodeEncodeError because the default encoding of Python
 2.7 is not set. In that case, try the following
+
     >> PYTHONIOENCODING=UTF-8 python extract_labeled_phrases.py data.xml > data.txt
+
 Resource:
 [http://stackoverflow.com/questions/4545661/unicodedecodeerror-when-redirecting-to-file][]
