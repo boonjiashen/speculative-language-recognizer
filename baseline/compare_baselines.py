@@ -17,6 +17,7 @@ from sklearn import metrics
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
+from sklearn import svm
 
 if __name__ == "__main__":
 
@@ -63,36 +64,46 @@ if __name__ == "__main__":
 
     ######################## Define baseline algorithms ####################### 
 
-    named_pipelines = [
-            # Define a Naive Bayes classifier that uses TF-IDF
-            ('Freq of words -> TDIDF -> NB', Pipeline([
-                ('vect', CountVectorizer()),
-                ('tfidf', TfidfTransformer()),
-                ('clf', MultinomialNB()),
-                ])),
-            # SVM classifier
-            ('Freq of words -> TDIDF -> SVM', Pipeline([
-                ('vect', CountVectorizer()),
-                ('tfidf', TfidfTransformer()),
-                ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)),
-                ])),
-            # SVM classifier
-            ('Presence of words -> SVM', Pipeline([
-                ('vect', CountVectorizer(binary=True)),
-                ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)),
-                ])),
-            # Define a Naive Bayes classifier which counts presence of words
-            # rather than the frequency of words
-            ('Presence of words -> NB', Pipeline([
-                ('vect', CountVectorizer(binary=True)),
-                ('clf', MultinomialNB()),
-                ])),
-            # Define a Naive Bayes classifier with no TF-IDF
-            ('Freq of words -> NB', Pipeline([
-                ('vect', CountVectorizer()),
-                ('clf', MultinomialNB()),
-                ])),
-            ]
+    # Define several classification methods
+    linear_SVM_SGD = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)
+    linear_SVM = svm.SVC(kernel='linear')
+    RBF_SVM = svm.SVC(kernel='rbf')
+    NB_method = MultinomialNB()
+    named_clf_methods = [
+            ('linear SVM with SGD', linear_SVM_SGD),
+            #('linear SVM', linear_SVM),
+            #('SVM with RBF kernel', RBF_SVM),
+            ('NB', NB_method)]
+
+    # Each named pipeline is a (description, pipeline) 2-ple
+    named_pipelines = []
+    for binarize_word_counts in [True, False]:
+        for include_TFIDF in [True, False]:
+            for clf_name, clf_method in named_clf_methods:
+
+                # A pipeline consists of a series of transforms
+                named_transforms = []
+
+                # Add either word count or word presence
+                vectorizer_name = 'Presence of words'  \
+                        if binarize_word_counts else 'Freq of words'
+                vectorizer = CountVectorizer(binary=binarize_word_counts)
+                named_transforms.append((vectorizer_name, vectorizer, ))
+
+                # Add TFIDF transform
+                if include_TFIDF:
+                    named_transforms.append(('TDIDF', TfidfTransformer()))
+
+                # Add classification method at the tail
+                named_transforms.append((clf_name, clf_method,))
+
+                # Derive name by joining names of all the transforms
+                name = ' -> '.join(zip(*named_transforms)[0])
+
+                # Append to the list of pipelines
+                named_pipeline = (name, Pipeline(named_transforms))
+                named_pipelines.append(named_pipeline)
+
 
     ######################### Train and test each algorithm ###################
 
@@ -115,5 +126,5 @@ if __name__ == "__main__":
         # Print performance metrics
         print 'Pipeline:', \
             (('%-' + str(field_width) + 's') % pipeline_name),  \
-            'F1 score = %f' % f1
+            ' | F1 score = %f' % f1
 
