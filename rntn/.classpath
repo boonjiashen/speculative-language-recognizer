@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="ejml-0.23.jar"/>
+	<classpathentry kind="lib" path="javax.json.jar"/>
+	<classpathentry kind="lib" path="joda-time.jar"/>
+	<classpathentry kind="lib" path="jollyday.jar"/>
+	<classpathentry kind="lib" path="stanford-corenlp-3.5.0-javadoc.jar"/>
+	<classpathentry kind="lib" path="stanford-corenlp-3.5.0.jar" sourcepath="stanford-corenlp-3.5.0-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/rntn/stanford-corenlp-3.5.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="xom.jar"/>
+	<classpathentry kind="lib" path="stanford-corenlp-3.5.0-sources.jar"/>
+	<classpathentry kind="lib" path="/Users/akshaysood/Dropbox/synced/courses_fall_14/CS760 Machine Learning/project/sentiment analysis/stanford-corenlp-full-2014-10-31/stanford-corenlp-3.5.0-models.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
