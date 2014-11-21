@@ -65,14 +65,11 @@ if __name__ == "__main__":
     ######################## Define baseline algorithms ####################### 
 
     # Define several classification methods
-    linear_SVM_SGD = SGDClassifier(loss='hinge',
-            penalty='l2', alpha=1e-3, n_iter=5)
-    linear_SVM = svm.SVC(kernel='linear')
+    linear_SVM = svm.LinearSVC(C=1)
     RBF_SVM = svm.SVC(kernel='rbf')
     NB_method = MultinomialNB()
     named_clf_methods = [
-            ('linear SVM with SGD', linear_SVM_SGD),
-            #('linear SVM', linear_SVM),
+            ('linear SVM', linear_SVM),
             #('SVM with RBF kernel', RBF_SVM),
             ('NB', NB_method)]
 
