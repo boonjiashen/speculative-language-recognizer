@@ -65,7 +65,8 @@ if __name__ == "__main__":
     ######################## Define baseline algorithms ####################### 
 
     # Define several classification methods
-    linear_SVM_SGD = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5)
+    linear_SVM_SGD = SGDClassifier(loss='hinge',
+            penalty='l2', alpha=1e-3, n_iter=5)
     linear_SVM = svm.SVC(kernel='linear')
     RBF_SVM = svm.SVC(kernel='rbf')
     NB_method = MultinomialNB()
@@ -75,24 +76,26 @@ if __name__ == "__main__":
             #('SVM with RBF kernel', RBF_SVM),
             ('NB', NB_method)]
 
-    # Each named pipeline is a (description, pipeline) 2-ple
+    # Each named pipeline is a (description, pipeline) 2-ple.
+    # Each pipeline is 1 or more transforms on a sentence, followed by a
+    # classification.
     named_pipelines = []
-    for binarize_word_counts in [True, False]:
-        for include_TFIDF in [True, False]:
-            for clf_name, clf_method in named_clf_methods:
+    for binarize_word_counts in [True, False]:  # Word count or word presence
+        for clf_name, clf_method in named_clf_methods:
+            for n_grams in [1, 2]:  # Unigrams or bigrams
 
-                # A pipeline consists of a series of transforms
+                # Create the list of transforms and the classifier at the end
                 named_transforms = []
 
                 # Add either word count or word presence
-                vectorizer_name = 'Presence of words'  \
-                        if binarize_word_counts else 'Freq of words'
-                vectorizer = CountVectorizer(binary=binarize_word_counts)
+                vectorizer_name = ('Presence of words'  \
+                        if binarize_word_counts else 'Freq of words') +  \
+                        ' ' +  \
+                        (str(n_grams) + '-grams')
+                vectorizer = CountVectorizer(
+                        ngram_range=(1, n_grams),
+                        binary=binarize_word_counts)
                 named_transforms.append((vectorizer_name, vectorizer, ))
-
-                # Add TFIDF transform
-                if include_TFIDF:
-                    named_transforms.append(('TDIDF', TfidfTransformer()))
 
                 # Add classification method at the tail
                 named_transforms.append((clf_name, clf_method,))
