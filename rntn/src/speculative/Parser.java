@@ -42,7 +42,7 @@ public class Parser {
         // Parse the sentences using the Stanford parser
         // Generate binary trees (required for Stanford sentiment analyser)
         // Label the trees
-        List<String> labeled = BinarizeDataset.binarizeAndLabel(sentences.subList(0, 100));
+        List<String> labeled = BinarizeDataset.binarizeAndLabel(sentences);
 
         // Write out labeled trees
         PrintWriter writer = new PrintWriter(outFile, "UTF-8");
