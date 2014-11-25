@@ -29,6 +29,7 @@ public class BinarizeDataset {
         LexicalizedParser parser = LexicalizedParser.loadModel(parserModel);
         TreeBinarizer binarizer = TreeBinarizer.simpleTreeBinarizer(parser.getTLPParams().headFinder(), parser.treebankLanguagePack());
 
+        System.out.println("Generating parse trees...");
         for (int i = 0; i < sentences.size(); i++) {
             System.out.println("Now binarizing and labeling sentence " + i);
             Sentence s = sentences.get(i);
@@ -55,6 +56,7 @@ public class BinarizeDataset {
             // Add to output
             output.add(collapsedUnary.toString());
         }
+        System.out.println("Done generating parse trees");
         return output;
     }
 
