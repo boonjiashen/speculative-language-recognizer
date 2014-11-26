@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 
 import edu.stanford.nlp.sentiment.RNNOptions;
-import edu.stanford.nlp.sentiment.RNNTrainOptions;
 import edu.stanford.nlp.sentiment.SentimentModel;
 import edu.stanford.nlp.sentiment.SentimentTraining;
 import edu.stanford.nlp.sentiment.SentimentUtils;
@@ -24,13 +23,22 @@ public class Train {
     public static void main(String[] args) throws Exception {
 
         String inFile = "res/parsed.txt";
-        String outFile = "res/model.txt";
+        String trainPath = "res/train.txt";
+        String devPath = "res/dev.txt";
+        String testPath = "res/test.txt";
+        String modelPath = "res/model.ser.gz";
 
         for (int argIndex = 0; argIndex < args.length; argIndex++) {
             if (args[argIndex].equalsIgnoreCase("-input")) {
                 inFile = args[++argIndex];
-            } else if (args[argIndex].equalsIgnoreCase("-output")) {
-                outFile = args[++argIndex];
+            } else if (args[argIndex].equalsIgnoreCase("-train")) {
+                trainPath = args[++argIndex];
+            } else if (args[argIndex].equalsIgnoreCase("-dev")) {
+                devPath = args[++argIndex];
+            } else if (args[argIndex].equalsIgnoreCase("-test")) {
+                testPath = args[++argIndex];
+            } else if (args[argIndex].equalsIgnoreCase("-model")) {
+                modelPath = args[++argIndex];
             } else {
                 System.err.println("Unknown argument " + args[argIndex]);
                 System.exit(2);
@@ -50,98 +58,80 @@ public class Train {
 
         // Generate training/test data
         Collections.shuffle(sentences);
-        //TODO: set the correct values for data size
         
-        //int trainingSize = sentences.size()/2;
-        //int testSize = Math.min(500, sentences.size() - trainingSize);
-        //int devSize = ;
-        
-        int trainingSize = 10;
-        int devSize = 5;
-        int testSize = 5;
+        int trainingSize = (int) (sentences.size() * 0.6);
+        int testSize = (int) (sentences.size() * 0.3);
+        int devSize = sentences.size() - trainingSize - testSize;
+
         List<String> trainingData = sentences.subList(0, trainingSize);
-        List<String> devData = sentences.subList(trainingSize,trainingSize+devSize);
-        List<String> testData = sentences.subList(trainingSize+devSize,trainingSize+devSize+testSize);
-        
+        List<String> devData = sentences.subList(trainingSize, trainingSize + devSize);
+        List<String> testData = sentences.subList(trainingSize + devSize, 
+                trainingSize + devSize + testSize);
+
         //write the training, dev and test data to files
-        PrintWriter pw = new PrintWriter("res\\train.txt","UTF-8");
-        for(int i=0;i<trainingSize;i++)
+        PrintWriter pw = new PrintWriter(trainPath,"UTF-8");
+        for(int i = 0; i < trainingSize; i++)
         	pw.println(trainingData.get(i));
         pw.close();
         
-        pw = new PrintWriter("res\\dev.txt","UTF-8");
-        for(int i=0;i<devSize;i++)
+        pw = new PrintWriter(devPath,"UTF-8");
+        for(int i = 0; i < devSize; i++)
         	pw.println(devData.get(i));
         pw.close();
         
-        pw = new PrintWriter("res\\test.txt","UTF-8");
-        for(int i=0;i<testSize;i++)
+        pw = new PrintWriter(testPath,"UTF-8");
+        for(int i = 0;i < testSize; i++)
         	pw.println(testData.get(i));
         pw.close();
         
         // Train sentiment analysis model
-        // TODO
-        SentimentTraining st = new SentimentTraining();
         RNNOptions op = new RNNOptions();
 
-        String trainPath = "C:\\Users\\Rasiga\\speculative\\speculative-language-recognizer\\rntn\\res\\train.txt";
-        String devPath = "C:\\Users\\Rasiga\\speculative\\speculative-language-recognizer\\rntn\\res\\dev.txt";
         boolean runTraining = true;
-        boolean filterUnknown = false;
-        String modelPath = "C:\\Users\\Rasiga\\speculative\\speculative-language-recognizer\\rntn\\res\\toymodel.ser";
 
         // read in the trees
         List<Tree> trainingTrees = SentimentUtils.readTreesWithGoldLabels(trainPath);
         System.err.println("Read in " + trainingTrees.size() + " training trees");
-        if (filterUnknown) {
-          trainingTrees = SentimentUtils.filterUnknownRoots(trainingTrees);
-          System.err.println("Filtered training trees: " + trainingTrees.size());
-        }
 
         List<Tree> devTrees = null;
         if (devPath != null) {
           devTrees = SentimentUtils.readTreesWithGoldLabels(devPath);
           System.err.println("Read in " + devTrees.size() + " dev trees");
-          if (filterUnknown) {
-            devTrees = SentimentUtils.filterUnknownRoots(devTrees);
-            System.err.println("Filtered dev trees: " + devTrees.size());
-          }
         }
+
         //setting RNN options
         String[] options = new String[30];
         options[0] = "-numClasses";
         options[1] = "2";
         options[2] = "-simplifiedModel";
         options[3] = "-classNames";
-        options[4] = "speculative,non-speculative";
+        options[4] = "non-speculative,speculative";
         options[5] = "-equivalenceClasses";
         options[6] = " ";
         options[7] = "-equivalenceClassNames";
         options[8] = " ";
         
         int index = 0;
-        while(options[index]!=null)
+        while (options[index] != null)
         	index = op.setOption(options,index);
         
         String[] trainOptions = new String[30];
-        trainOptions[0] = "-batchSize";
-        trainOptions[1] = "2";
-        trainOptions[2] = "-epochs";
-        trainOptions[3] = "10";
-        trainOptions[4] = "-learningRate";
-        trainOptions[5] = "0.01";
-        
-        //RNNTrainOptions trainOp = new RNNTrainOptions();
+//        trainOptions[0] = "-batchSize";
+//        trainOptions[1] = "2";
+//        trainOptions[2] = "-epochs";
+//        trainOptions[3] = "10";
+//        trainOptions[4] = "-learningRate";
+//        trainOptions[5] = "0.01";
         
         index = 0;
-        while(trainOptions[index]!=null)
-        	index = op.trainOptions.setOption(trainOptions,index);
+        while(trainOptions[index] != null)
+        	index = op.trainOptions.setOption(trainOptions, index);
         
         System.err.println("Sentiment model options:\n" + op);
         SentimentModel model = new SentimentModel(op, trainingTrees);
         
           if (runTraining) {
-            st.train(model, modelPath, trainingTrees, devTrees);
+            SentimentTraining.train(model, modelPath, trainingTrees, devTrees);
             model.saveSerialized(modelPath);
           }
     }

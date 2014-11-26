@@ -104,10 +104,13 @@ public class Test {
             for (Annotation annotation : annotations) {
                 pipeline.annotate(annotation);
                 for (CoreMap sentence : annotation.get(CoreAnnotations.SentencesAnnotation.class)) {
+                    // Print classifier output
                     System.out.println(sentence);
                     System.out.println("  " + sentence.get(SentimentCoreAnnotations.ClassName.class));
                     if (evaluate) {
-                        // Note: this assumes 0 is negative class and 1 is positive class
+                        // Code for evaluation
+                        // Note: this assumes 0 is negative class (non-speculative)
+                        // and 1 is positive class (speculative)
                         Tree tree = sentence.get(SentimentCoreAnnotations.AnnotatedTree.class);
                         int gold = RNNCoreAnnotations.getGoldClass(tree);
                         int predicted = RNNCoreAnnotations.getPredictedClass(tree);
@@ -128,6 +131,7 @@ public class Test {
                 }
             }
             if (evaluate) {
+                // Evaluate performance
                 double total = truePositives + trueNegatives + falsePositives + falseNegatives;
                 double accuracy = (truePositives + trueNegatives) / total;
                 double precision = truePositives / (truePositives + falsePositives);
