@@ -58,7 +58,7 @@ public class Train {
 
         // Generate training/test data
         Collections.shuffle(sentences);
-        
+
         int trainingSize = (int) (sentences.size() * 0.6);
         int testSize = (int) (sentences.size() * 0.3);
         int devSize = sentences.size() - trainingSize - testSize;
@@ -71,23 +71,21 @@ public class Train {
         //write the training, dev and test data to files
         PrintWriter pw = new PrintWriter(trainPath,"UTF-8");
         for(int i = 0; i < trainingSize; i++)
-        	pw.println(trainingData.get(i));
+            pw.println(trainingData.get(i));
         pw.close();
-        
+
         pw = new PrintWriter(devPath,"UTF-8");
         for(int i = 0; i < devSize; i++)
-        	pw.println(devData.get(i));
+            pw.println(devData.get(i));
         pw.close();
-        
+
         pw = new PrintWriter(testPath,"UTF-8");
         for(int i = 0;i < testSize; i++)
-        	pw.println(testData.get(i));
+            pw.println(testData.get(i));
         pw.close();
-        
+
         // Train sentiment analysis model
         RNNOptions op = new RNNOptions();
-
-        boolean runTraining = true;
 
         // read in the trees
         List<Tree> trainingTrees = SentimentUtils.readTreesWithGoldLabels(trainPath);
@@ -95,8 +93,8 @@ public class Train {
 
         List<Tree> devTrees = null;
         if (devPath != null) {
-          devTrees = SentimentUtils.readTreesWithGoldLabels(devPath);
-          System.err.println("Read in " + devTrees.size() + " dev trees");
+            devTrees = SentimentUtils.readTreesWithGoldLabels(devPath);
+            System.err.println("Read in " + devTrees.size() + " dev trees");
         }
 
         //setting RNN options
@@ -112,28 +110,27 @@ public class Train {
         }
         int index = 0;
         while (index < optionsArr.length) {
-        	index = op.setOption(optionsArr,index);
+            index = op.setOption(optionsArr,index);
         }
 
         List<String> trainOptions = new ArrayList<String>();
         trainOptions.add("-epochs");
-        trainOptions.add("2");
+        trainOptions.add("400");
         String[] trainOptionsArr = new String[trainOptions.size()];
         for (int i = 0; i < trainOptions.size(); i++) {
             trainOptionsArr[i] = trainOptions.get(i);
         }
         index = 0;
         while(index < trainOptionsArr.length) {
-        	index = op.trainOptions.setOption(trainOptionsArr, index);
+            index = op.trainOptions.setOption(trainOptionsArr, index);
         }
-        
+
         System.err.println("Sentiment model options:\n" + op);
         SentimentModel model = new SentimentModel(op, trainingTrees);
-        
-          if (runTraining) {
-            SentimentTraining.train(model, modelPath, trainingTrees, devTrees);
-            model.saveSerialized(modelPath);
-          }
+
+        SentimentTraining.train(model, modelPath, trainingTrees, devTrees);
+        model.saveSerialized(modelPath);
+        System.out.println("Training complete");
     }
 
 }

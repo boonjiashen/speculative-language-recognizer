@@ -181,6 +181,7 @@ public class Test {
     public static List<Annotation> getAnnotations(StanfordCoreNLP tokenizer, Input inputFormat, String filename, boolean filterUnknown) {
         switch (inputFormat) {
         case TEXT: {
+            // FIXME: Need to strip sentences of non-alphabet characters
             String text = IOUtils.slurpFileNoExceptions(filename);
             Annotation annotation = new Annotation(text);
             tokenizer.annotate(annotation);
