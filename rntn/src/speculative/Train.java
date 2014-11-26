@@ -100,32 +100,32 @@ public class Train {
         }
 
         //setting RNN options
-        String[] options = new String[30];
-        options[0] = "-numClasses";
-        options[1] = "2";
-        options[2] = "-simplifiedModel";
-        options[3] = "-classNames";
-        options[4] = "non-speculative,speculative";
-        options[5] = "-equivalenceClasses";
-        options[6] = " ";
-        options[7] = "-equivalenceClassNames";
-        options[8] = " ";
-        
+        List<String> options = new ArrayList<String>();
+        options.add("-binaryModel");
+        options.add("-classNames");
+        options.add("non-speculative,speculative");
+        options.add("-equivalenceClassNames");
+        options.add("non-speculative,speculative");
+        String[] optionsArr = new String[options.size()];
+        for (int i = 0; i < options.size(); i++) {
+            optionsArr[i] = options.get(i);
+        }
         int index = 0;
-        while (options[index] != null)
-        	index = op.setOption(options,index);
-        
-        String[] trainOptions = new String[30];
-//        trainOptions[0] = "-batchSize";
-//        trainOptions[1] = "2";
-//        trainOptions[2] = "-epochs";
-//        trainOptions[3] = "10";
-//        trainOptions[4] = "-learningRate";
-//        trainOptions[5] = "0.01";
-        
+        while (index < optionsArr.length) {
+        	index = op.setOption(optionsArr,index);
+        }
+
+        List<String> trainOptions = new ArrayList<String>();
+        trainOptions.add("-epochs");
+        trainOptions.add("2");
+        String[] trainOptionsArr = new String[trainOptions.size()];
+        for (int i = 0; i < trainOptions.size(); i++) {
+            trainOptionsArr[i] = trainOptions.get(i);
+        }
         index = 0;
-        while(trainOptions[index] != null)
-        	index = op.trainOptions.setOption(trainOptions, index);
+        while(index < trainOptionsArr.length) {
+        	index = op.trainOptions.setOption(trainOptionsArr, index);
+        }
         
         System.err.println("Sentiment model options:\n" + op);
         SentimentModel model = new SentimentModel(op, trainingTrees);
