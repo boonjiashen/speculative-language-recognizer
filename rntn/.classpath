@@ -14,6 +14,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="xom.jar"/>
 	<classpathentry kind="lib" path="stanford-corenlp-3.5.0-sources.jar"/>
-	<classpathentry kind="lib" path="/Users/akshaysood/Dropbox/synced/courses_fall_14/CS760 Machine Learning/project/sentiment analysis/stanford-corenlp-full-2014-10-31/stanford-corenlp-3.5.0-models.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Rasiga/Downloads/stanford-corenlp-full-2014-10-31/stanford-corenlp-full-2014-10-31/stanford-corenlp-3.5.0-models.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
