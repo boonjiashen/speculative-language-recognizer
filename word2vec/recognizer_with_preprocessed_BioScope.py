@@ -166,4 +166,9 @@ if __name__ == "__main__":
     ######################### Print classification metrices ###################
 
     target_names = ['non-speculative', 'speculative']
-    print sklearn.metrics.classification_report(ytest, predictions, target_names=target_names)
+    classification_report = sklearn.metrics.classification_report(
+            ytest, predictions, target_names=target_names)
+    accuracy = sklearn.metrics.accuracy_score(ytest, predictions)
+    f1 = sklearn.metrics.f1_score(ytest, predictions)
+
+    print 'accuracy = %f | F1 = %f' % (accuracy, f1)
