@@ -47,11 +47,20 @@ if __name__ == "__main__":
     parser.add_argument('filename', metavar='filepath', type=str,
             help='pre-processed data file containing labeled sentences')
 
+    # Min count to allow a word in the vocabulary
+    default_min_word_count = 5
+    parser.add_argument('--min_count', type=int,
+            help='min count to allow a word in the vocabulary (default=' +
+            str(default_min_word_count) + ')',
+            default=default_min_word_count,
+            )
+
     # Grab arguments from stdin
     args = parser.parse_args()
 
-    # Filenames of BioScope XML files
-    filename = args.filename
+    # Convert parsed inputs into local variables
+    filename = args.filename  # Filename of BioScope XML files
+    min_word_count = args.min_count
 
 
     ######################### Construct datasets ############################## 
@@ -121,7 +130,6 @@ if __name__ == "__main__":
 
     # Initialize word model (no training here)
     word_vector_length = 50  # Length of a single word vector
-    min_word_count = 5  # Min count to allow a word in the vocabulary
     model = gensim.models.Doc2Vec(
             size=word_vector_length,
             min_count=min_word_count)
