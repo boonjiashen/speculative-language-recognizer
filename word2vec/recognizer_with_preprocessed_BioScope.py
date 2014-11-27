@@ -31,36 +31,26 @@ import argparse
 import random
 import sklearn.tree
 import sklearn.metrics
+import utils
 
 if __name__ == "__main__":
 
 
     ######################## Parse command-line arguments ##################### 
 
-    parser = argparse.ArgumentParser()
-
-    # Add argument for more verbose stdout
-    parser.add_argument("-v", "--verbose",
-            help="print status during program execution", action="store_true")
+    parser = utils.get_parser()
 
     # Add required argument of training data
     parser.add_argument('filename', metavar='filepath', type=str,
             help='pre-processed data file containing labeled sentences')
 
-    # Min count to allow a word in the vocabulary
-    default_min_word_count = 5
-    parser.add_argument('--min_count', type=int,
-            help='min count to allow a word in the vocabulary (default=' +
-            str(default_min_word_count) + ')',
-            default=default_min_word_count,
-            )
-
     # Grab arguments from stdin
     args = parser.parse_args()
 
     # Convert parsed inputs into local variables
-    filename = args.filename  # Filename of BioScope XML files
-    min_word_count = args.min_count
+    # filename, min_count
+    locals().update(args.__dict__)
+    min_word_count = min_count
 
 
     ######################### Construct datasets ############################## 

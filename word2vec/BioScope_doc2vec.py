@@ -7,48 +7,16 @@ import gensim
 import numpy as np
 import itertools
 import nltk
-import argparse
 import random
+import utils
 from bs4 import BeautifulSoup
 from BioScope_word2vec import get_tokenized_sentences_from_Bioscope
-
-
-def get_parser(default_n_epochs=5, default_min_word_count=5):
-    """Returns an argument parser that has arguments - debug, verbose,
-    min_count, n_epochs
-    """
-
-    parser = argparse.ArgumentParser()
-
-    # Add argument for debug statements
-    parser.add_argument("--debug",
-            help="print debug messages", action="store_true")
-
-    # Add argument for number of training epochs
-    parser.add_argument("--n_epochs", type=int,
-            help="number of training epochs (default=%i)" % default_n_epochs,
-            default=default_n_epochs
-            )
-
-    # Add argument for more verbose stdout
-    parser.add_argument("-v", "--verbose",
-            help="print status during program execution", action="store_true")
-
-    # Min count to allow a word in the vocabulary
-    parser.add_argument('--min_count', type=int,
-            help='min count to allow a word in the vocabulary (default=' +
-            str(default_min_word_count) + ')',
-            default=default_min_word_count,
-            )
-
-    return parser
-
 
 if __name__ == "__main__":
 
     ######################## Parse command-line arguments ##################### 
 
-    parser = get_parser()
+    parser = utils.get_parser()
 
     # Add required argument of training data
     parser.add_argument('filenames', metavar='filepath', type=str, nargs='+',
@@ -58,11 +26,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Convert parsed inputs into local variables
-    filenames = args.filenames  # Filenames of BioScope XML files
-    min_word_count = args.min_count
-    verbose = args.verbose
-    DEBUG = args.debug
-    n_epochs = args.n_epochs
+    # filenames, min_count, verbose, debug, n_epochs
+    locals().update(args.__dict__)
+    min_word_count = min_count
+    DEBUG = debug
 
 
     ######################### Pre-process dataset ############################# 
