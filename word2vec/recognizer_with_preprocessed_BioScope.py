@@ -47,8 +47,11 @@ if __name__ == "__main__":
     # Grab arguments from stdin
     args = parser.parse_args()
 
+    # Check that the expected arguments are in args
+    expected_args = ['n_epochs', 'min_count', 'verbose', 'debug']
+    assert set(expected_args) <= set(args.__dict__)
+
     # Convert parsed inputs into local variables
-    # filename, min_count
     locals().update(args.__dict__)
     min_word_count = min_count
 
