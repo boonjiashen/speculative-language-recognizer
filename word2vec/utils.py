@@ -1,4 +1,8 @@
+"""Utility functions useful for word2vec and doc2vec applications
+"""
+
 import argparse
+from bs4 import BeautifulSoup
 
 
 def get_parser(default_n_epochs=5, default_min_word_count=5):
@@ -34,3 +38,37 @@ def get_parser(default_n_epochs=5, default_min_word_count=5):
     return parser
 
 
+def download_XML_from_Biomed(src_filename="cc13902.xml", dst_filename="dummy"):
+    """Returns a XML textblock from a Biomed article
+
+    Resource:
+    http://www.biomedcentral.com/about/datamining
+    """
+
+    from ftplib import FTP
+    ftp = FTP('ftp.biomedcentral.com')  # connect to server
+    ftp.login('datamining', '$8Xguppy')  # login with username and password
+    ftp.cwd('articles')  # walk to the directory with all the XML files
+
+    if False:
+
+        # Assign XML file to string
+        data = []
+        def handle_binary(more_data):
+            """Tells ftp to append downloaded text to a list.
+
+            Source:
+            http://stackoverflow.com/questions/18772703/read-a-file-in-buffer-from-ftp-python
+            """
+
+            data.append(more_data)
+
+        ftp.retrbinary('RETR %s' % src_filename, callback=handle_binary)
+
+    else:
+
+        # Write XML file to disk
+        with open(dst_filename, 'w') as fid:
+            ftp.retrbinary('RETR %s' % src_filename, callback=fid.write)
+
+    ftp.close()
