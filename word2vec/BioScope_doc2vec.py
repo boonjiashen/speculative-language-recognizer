@@ -12,16 +12,43 @@ import random
 from bs4 import BeautifulSoup
 from BioScope_word2vec import get_tokenized_sentences_from_Bioscope
 
-if __name__ == "__main__":
 
-
-    ######################## Parse command-line arguments ##################### 
+def get_parser(default_n_epochs=5, default_min_word_count=5):
+    """Returns an argument parser that has arguments - debug, verbose,
+    min_count, n_epochs
+    """
 
     parser = argparse.ArgumentParser()
+
+    # Add argument for debug statements
+    parser.add_argument("--debug",
+            help="print debug messages", action="store_true")
+
+    # Add argument for number of training epochs
+    parser.add_argument("--n_epochs", type=int,
+            help="number of training epochs (default=%i)" % default_n_epochs,
+            default=default_n_epochs
+            )
 
     # Add argument for more verbose stdout
     parser.add_argument("-v", "--verbose",
             help="print status during program execution", action="store_true")
+
+    # Min count to allow a word in the vocabulary
+    parser.add_argument('--min_count', type=int,
+            help='min count to allow a word in the vocabulary (default=' +
+            str(default_min_word_count) + ')',
+            default=default_min_word_count,
+            )
+
+    return parser
+
+
+if __name__ == "__main__":
+
+    ######################## Parse command-line arguments ##################### 
+
+    parser = get_parser()
 
     # Add required argument of training data
     parser.add_argument('filenames', metavar='filepath', type=str, nargs='+',
@@ -30,8 +57,12 @@ if __name__ == "__main__":
     # Grab arguments from stdin
     args = parser.parse_args()
 
-    # Filenames of BioScope XML files
-    filenames = args.filenames
+    # Convert parsed inputs into local variables
+    filenames = args.filenames  # Filenames of BioScope XML files
+    min_word_count = args.min_count
+    verbose = args.verbose
+    DEBUG = args.debug
+    n_epochs = args.n_epochs
 
 
     ######################### Pre-process dataset ############################# 
@@ -68,42 +99,51 @@ if __name__ == "__main__":
 
     # Initialize word model (no training here)
     word_vector_length = 50  # Length of a single word vector
-    min_word_count = 5  # Min count to allow a word in the vocabulary
     model = gensim.models.Doc2Vec(
             size=word_vector_length,
             min_count=min_word_count)
 
-    # Train word2vec model
+    # Build vocab using entire dataset
+    model.build_vocab(labeled_sentences)  
+
+    # Start training doc2vec model with training set
     train_set = [labeled_sentences[i] for i in train_inds]
-    model.build_vocab(labeled_sentences)  # build vocab using entire dataset
-    model.train(train_set)  # train using training set
+    #model.train_lbls = False;  # freeze training of sentences
+    prev_weight_norm = np.linalg.norm(model.syn0)
+    if DEBUG: print 'L2 norm of weights before training is', prev_weight_norm
+    for ei in range(n_epochs):
+
+        # Train for one epoch
+        model.train(train_set)
+
+        # Print change in weights
+        curr_weight_norm = np.linalg.norm(model.syn0)
+        if DEBUG:
+            print ('Weight norm after %i epochs is %f, ' +  \
+                    'change since prev epoch is %f') %  \
+                    (ei + 1, curr_weight_norm,
+                    curr_weight_norm - prev_weight_norm)
+        prev_weight_norm = curr_weight_norm
+
     
 
-    ######################### Get vectors for testset #########################
-
-    if args.verbose:
-        print 'Before learning test set:'
-        for ind in test_inds:
-            sentence_vec = model[ind2label(ind)]
-            print sentence_vec
+    ######################### Run prediction on testset #######################
 
     model.train_words = False  # freeze weights for word vector learning
     test_set = [labeled_sentences[i] for i in test_inds]
-    model.train(test_set)
 
-    if args.verbose:
-        print 'After learning test set:'
-        for ind in test_inds:
-            sentence_vec = model[ind2label(ind)]
-            print sentence_vec
+    # Start training
+    model.train(test_set)
 
 
     ######################### Test model qualitatively ######################## 
 
     test_words = ['blood', 'demonstrated']
     for test_word in test_words:
+
         if test_word not in model.vocab:
-            print 'Test word "%s" not in vocab' % test_word
+            if verbose:
+                print 'test word "%s" not in vocab' % test_word
             continue
 
         # Get test_words similar to this test test_word
@@ -111,5 +151,6 @@ if __name__ == "__main__":
                 for word, similarity in model.most_similar(test_word)]
 
         # Print similar words
-        print 'Words similar to "%s":' % test_word
-        print '\t', ' '.join(similar_words)
+        if verbose:
+            print 'Words similar to "%s":' % test_word
+            print '\t', ' '.join(similar_words)
