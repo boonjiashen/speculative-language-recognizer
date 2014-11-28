@@ -96,12 +96,14 @@ def get_Biomed_XML_as_string(src_filename="cc13902.xml", ftp=None):
     if not ftp_given:
         ftp = get_Biomed_FTP_object()
 
+    # Download XML file
     ftp.retrbinary('RETR %s' % src_filename, callback=handle_binary)
 
     if not ftp_given:
         ftp.close()
 
-    return data[0]
+    # Join the chunks we downloaded and return as one long string
+    return ''.join(data)
 
 
 def write_Biomed_XML_to_file(src_filename="cc13902.xml", dst_filename="dummy",
