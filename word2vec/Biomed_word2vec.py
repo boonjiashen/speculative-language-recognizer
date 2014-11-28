@@ -19,6 +19,7 @@ from Word2VecScorer import Word2VecScorer
 
 if __name__ == "__main__":
 
+    random.seed(0)  # seed RNG to make it deterministic in each run
 
     ######################## Parse command-line arguments ##################### 
 
@@ -53,7 +54,11 @@ if __name__ == "__main__":
     if src_dir:  # Get articles from local disk
 
         # List files in user-given directory
-        xml_filenames = os.listdir(src_dir)[:n_articles]
+        xml_filenames = os.listdir(src_dir)
+
+        # Choose n_articles at random
+        random.shuffle(xml_filenames)
+        xml_filenames = xml_filenames[:n_articles]
 
         # Read in articles one by one
         for filename in xml_filenames:
@@ -96,7 +101,6 @@ if __name__ == "__main__":
             for sentence in utils.retrieve_sentences_from_Biomed_textblock(article)]
 
     # Shuffle sentences
-    random.seed(0)
     random.shuffle(sentences)
 
     # Get tokenized sentences from Biomed articles
@@ -127,7 +131,7 @@ if __name__ == "__main__":
     scorer = Word2VecScorer(model)
 
     # Get score for each training epoch
-    learning_rate = 0.005  
+    learning_rate = 0.002  
     for ei in range(n_epochs):
 
         # Train for one epoch
