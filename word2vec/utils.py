@@ -7,6 +7,23 @@ from ftplib import FTP
 from bs4 import BeautifulSoup
 
 
+def multigen(gen_func):
+    """Decorator that makes a generator function reuseable.
+
+    Add @multigen on top of the function header
+    Resource:
+    http://stackoverflow.com/questions/1376438/how-to-make-a-repeating-generator-in-python
+    """
+
+    class _multigen(object):
+        def __init__(self, *args, **kwargs):
+            self.__args = args
+            self.__kwargs = kwargs
+        def __iter__(self):
+            return gen_func(*self.__args, **self.__kwargs)
+    return _multigen
+
+
 def get_parser(default_n_epochs=5, default_min_word_count=5):
     """Returns an argument parser intended for scripts utilizing word2vec and
     doc2vec

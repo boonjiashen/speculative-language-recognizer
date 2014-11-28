@@ -6,6 +6,7 @@ import scipy.cluster.vq  # for K-means clustering of word vectors
 #from bs4 import BeautifulSoup  # to parse XML
 import nltk  # to split plain text into sentences
 import itertools
+import utils
 
 
 #def get_sentences_from_Bioscope(filename):
@@ -48,23 +49,19 @@ def lower_tokenized_sentences(generator):
 #sentences = get_sentences_from_Bioscope('../data/abstracts.xml')
 #sentences = get_sentences_from_plain_text_file('data/austen-emma.txt')
 
-
-class GutenbergSentences(object):
+@utils.multigen
+def yield_gutenberg_sentences(filenames):
     """Generator object that yields lists of words from novels in the NLTK lib 
 
+    Takes in a list of filenames recognized by ntlk.corpus.gutenberg.sents
     >>> # Get generator
-    >>> sentences = GutenbergSentences(['austen-emma.txt', 'austen-persuasion'])
+    >>> sentences = yield_gutenberg_sentences(['austen-emma.txt', 'austen-persuasion'])
     >>> # Print one list of words per iteration
     >>> for sentence in sentences: print sentence
     """
-    def __init__(self, filenames):
-        """Takes in a list of filenames recognized by
-        ntlk.corpus.gutenberg.sents"""
-        self.filenames = filenames
-    def __iter__(self):
-        for filename in self.filenames:
-            for sentence in nltk.corpus.gutenberg.sents(filename):
-                yield sentence
+    for filename in filenames:
+        for sentence in nltk.corpus.gutenberg.sents(filename):
+            yield sentence
 
 
 if __name__ == "__main__":
@@ -74,8 +71,12 @@ if __name__ == "__main__":
 
     # Get sentences from all books in the NLTK corpus, should be about 100K
     # sentences
-    filenames = nltk.corpus.gutenberg.fileids()[:2]
-    get_sentences = lambda: lower_tokenized_sentences(GutenbergSentences(filenames))
+    filenames = nltk.corpus.gutenberg.fileids()[:1]
+    #get_sentences = lambda: lower_tokenized_sentences(GutenbergSentences(filenames))
+    get_sentences = lambda: (
+            [word.lower() for word in sentence]
+            for sentence in yield_gutenberg_sentences(filenames)
+            )
 
     if verbose:
         print('Training with %i novel%s from Gutenberg...' %  \
