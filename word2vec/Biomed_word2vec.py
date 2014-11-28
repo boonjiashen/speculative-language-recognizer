@@ -91,32 +91,39 @@ if __name__ == "__main__":
     # Create scorer based in this model
     scorer = Word2VecScorer(model)
 
+    def get_mean_similarity():
+        "1 number metric on how well a word2vec model is doing"
+
+        model.init_sims()
+        def get_norm_vector(word):
+            return model.syn0norm[model.vocab[word].index]
+        similarities = []  # How well model does for each comparison
+        for pos1, neg1, pos2, neg2 in scorer.comparisons:
+
+            # Get offsets pos1-neg1 and pos2-neg2
+            # These vectors should be similar in a well-trained model
+            offsets = [get_norm_vector(pos) - get_norm_vector(neg)
+                    for pos, neg in [(pos1, neg1), (pos2, neg2)]]
+
+            similarity = np.dot(offsets[0], offsets[1])
+
+            similarities.append(similarity)
+
+        mean_similarity = np.mean(similarities) if similarities else 0
+
+        return mean_similarity
+
     # Get score for each training epoch
     for ei in range(n_epochs):
 
         # Train for one epoch
+        model.alpha = model.min_alpha = 0.001  # Learning rate
         model.train(get_sentences())
 
         # Evaluate model after each epoch
-        scores = [scorer.score(model, topn, percentage=False)
-                for topn in [1, 2, 3, 4, 5]]
-        print ('After %i epochs, score is' % (ei + 1)), scores
+        score = get_mean_similarity()
+        #scores = [scorer.score(model, topn, percentage=False)
+                #for topn in [1, 2, 3, 4, 5]]
+        print ('After %i epochs, score is' % (ei + 1)), score
 
     if verbose: sys.stdout.write('done.\n')
-    
-
-    ########################## Test model qualitatively ######################## 
-
-    #test_words = ['blood', 'demonstrated']
-    #for test_word in test_words:
-        #if test_word not in model.vocab:
-            #print 'Test word "%s" not in vocab' % test_word
-            #continue
-
-        ## Get test_words similar to this test test_word
-        #similar_words = [word
-                #for word, similarity in model.most_similar(test_word)]
-
-        ## Print similar words
-        #print 'Words similar to "%s":' % test_word
-        #print '\t', ' '.join(similar_words)
