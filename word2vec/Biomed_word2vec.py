@@ -12,6 +12,8 @@ import nltk
 import argparse
 import utils
 import sys
+import os
+import random
 from Word2VecScorer import Word2VecScorer
 
 
@@ -26,6 +28,12 @@ if __name__ == "__main__":
     parser.add_argument('n_articles', metavar='n_articles', type=int,
            help='number of Biomed articles to be used as training data')
 
+    # Local directory of XML files (if unspecified, download articles from
+    # Internet)
+    parser.add_argument('--local', dest='src_dir',
+           help='local directory of Biomed articles in XML (if ' +  \
+                   'unspecified, we download articles from the Internet)')
+
     # Grab arguments from stdin
     args = parser.parse_args()
 
@@ -38,46 +46,67 @@ if __name__ == "__main__":
     min_word_count = min_count
 
 
-    ################### Load sentences ########################################
+    ################### Load articles  ########################################
 
-    # Read list of XML filenames
-    filenames_file = 'data/Biomed_filenames'  # File storing filenames
-    with open(filenames_file) as fid:
-        xml_filenames = fid.read().splitlines()
+    # Get articles either from local disk or Internet
+    articles = []
+    if src_dir:  # Get articles from local disk
 
-    if verbose:
-        sys.stdout.write(
-            'Downloading %i Biomed articles... ' % n_articles)
-        sys.stdout.flush()
+        # List files in user-given directory
+        xml_filenames = os.listdir(src_dir)[:n_articles]
 
-    # Define a function that tokenizes a block of text into sentences
-    sentenize = nltk.data.load('tokenizers/punkt/english.pickle').tokenize
+        # Read in articles one by one
+        for filename in xml_filenames:
+            full_path = os.path.join(src_dir, filename)
+            with open(full_path) as fid:
+                article = fid.read()
+                articles.append(article)
 
-    # Download a couple of Biomedical articles and grab their sentences
-    sentences = []
-    ftp = utils.get_Biomed_FTP_object()  # Login to FTP and cd to appropriate dir
-    for filename in xml_filenames[:n_articles]:
+    else:  # Get articles from Internet
 
-        # Download Biomed XML as a block of text
-        textblock = utils.get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
+        # Read list of XML filenames
+        filenames_file = 'data/Biomed_filenames'  # File storing filenames
+        with open(filenames_file) as fid:
+            xml_filenames = fid.read().splitlines()[:n_articles]
 
-        # Get sentences from Biomed article
-        curr_sentences = utils.retrieve_sentences_from_Biomed_textblock(textblock)
+        # Print status
+        if verbose:
+            sys.stdout.write(
+                'Downloading %i Biomed articles... ' % n_articles)
+            sys.stdout.flush()
 
-        sentences.extend(curr_sentences)
+        # Login to FTP and cd to appropriate dir
+        ftp = utils.get_Biomed_FTP_object()
 
-    ftp.close()  # Close FTP connection
+        # Download Biomed XML as blocks of text
+        articles = [
+                utils.get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
+                for filename in xml_filenames]
 
-    if verbose: sys.stdout.write('done.\n')
+        ftp.close()  # Close FTP connection
+
+        if verbose: sys.stdout.write('done.\n')
 
 
-    ######################### Train model ##################################### 
+    ######################### Parse articles into tokenized sentences #########
+
+    # Parse articles into sentences
+    sentences = [sentence
+            for article in articles
+            for sentence in utils.retrieve_sentences_from_Biomed_textblock(article)]
+
+    # Shuffle sentences
+    random.seed(0)
+    random.shuffle(sentences)
 
     # Get tokenized sentences from Biomed articles
     tokenized_sentences = [[word.lower() for word in nltk.word_tokenize(sentence)]
             for sentence in sentences]
 
     get_sentences = lambda: tokenized_sentences;
+
+
+    ######################### Train model ##################################### 
 
     if verbose:
         sys.stdout.write('Training model with %i sentences... ' %  \
@@ -98,10 +127,11 @@ if __name__ == "__main__":
     scorer = Word2VecScorer(model)
 
     # Get score for each training epoch
+    learning_rate = 0.005  
     for ei in range(n_epochs):
 
         # Train for one epoch
-        model.alpha = model.min_alpha = 0.001  # Learning rate
+        model.alpha = model.min_alpha = learning_rate
         model.train(get_sentences())
 
         # Evaluate model after each epoch
