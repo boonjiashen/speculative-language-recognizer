@@ -16,6 +16,7 @@ import os
 import random
 from Word2VecScorer import Word2VecScorer
 
+@utils.multigen
 def yield_file_contents(filenames, directory=''):
     """Return contents of files one-by-one as textblocks"""
     for filename in filenames:
@@ -23,15 +24,6 @@ def yield_file_contents(filenames, directory=''):
         with open(full_path) as fid:
             article = fid.read()
         yield article
-
-
-def yield_shuffled_sentences_from_Biomed_article(article):
-    """Return sentences one-by-one from a Biomed article in XML.
-    """
-    sentences = utils.retrieve_sentences_from_Biomed_textblock(article)
-    random.shuffle(sentences)
-    for sentence in sentences:
-        yield sentence
 
 
 if __name__ == "__main__":
@@ -108,21 +100,16 @@ if __name__ == "__main__":
 
     ######################### Parse articles into tokenized sentences #########
 
-    # Parse articles into sentences
-    sentences = (sentence
-            for article in articles
-            for sentence in yield_shuffled_sentences_from_Biomed_article(article))
-
     # Get tokenized sentences from Biomed articles
-    if verbose:
-        sys.stdout.write('Creating list of tokenized sentences... ')
-        sys.stdout.flush()
-    tokenized_sentences = [
-            [word.lower() for word in nltk.word_tokenize(sentence)]
-            for sentence in sentences
-            ]
-    if verbose:
-        sys.stdout.write('done.\n')
+    @utils.multigen
+    def yield_tokenized_sentences(articles):
+        for article in articles:
+            sentences = utils.retrieve_sentences_from_Biomed_textblock(article)
+            for sentence in sentences:
+                yield [word.lower() for word in nltk.word_tokenize(sentence)]
+
+    # Tokenized sentences is an object that can be called more than once
+    tokenized_sentences = yield_tokenized_sentences(articles)
 
     get_sentences = lambda: tokenized_sentences
 
@@ -142,7 +129,6 @@ if __name__ == "__main__":
     model = gensim.models.Word2Vec(
             size=word_vector_length,
             min_count=min_word_count)
-
 
     # Build vocabulary
     model.build_vocab(get_sentences())
