@@ -138,14 +138,14 @@ if __name__ == '__main__':
     with open(filenames_file) as fid:
         xml_filenames = fid.read().splitlines()
 
-    # Download a couple of files
+    # Download a couple of Biomedical articles and grab their sentences
     n_filenames = 3  # No. of articles we want to download
-    sentences = []
+    sentences = []  # Biomedical sentences from Biomed articles
+    ftp = get_Biomed_FTP_object()  # Login to FTP and cd to appropriate dir
     for filename in xml_filenames[:n_filenames]:
-        ftp = get_Biomed_FTP_object()
         textblock = get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
         curr_sentences = retrieve_sentences_from_Biomed_textblock(textblock)
 
         sentences.extend(curr_sentences)
 
-    ftp.close()
+    ftp.close()  # Close FTP connection
