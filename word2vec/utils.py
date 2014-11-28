@@ -2,6 +2,7 @@
 """
 
 import argparse
+import nltk
 from ftplib import FTP
 from bs4 import BeautifulSoup
 
@@ -39,8 +40,12 @@ def get_parser(default_n_epochs=5, default_min_word_count=5):
     return parser
 
 
-def retrieve_sentences_from_Biomed_textblock(textblock):
+def retrieve_sentences_from_Biomed_textblock(textblock,
+        sentenize=nltk.data.load('tokenizers/punkt/english.pickle').tokenize):
     """Returns a list of sentences from a textblock of a single Biomed article
+
+    sentenize is a function that takes a string and returns a list of
+    sentences.
 
     Resource:
     http://www.biomedcentral.com/about/datamining
@@ -51,7 +56,9 @@ def retrieve_sentences_from_Biomed_textblock(textblock):
     textblock = textblock.replace('\n', '')
 
     soup = BeautifulSoup(textblock)
-    sentences = [tag.get_text() for tag in soup.find_all('p')]
+    sentences = [sentence
+            for tag in soup.find_all('p')
+            for sentence in sentenize(tag.get_text())]
 
     return sentences
 

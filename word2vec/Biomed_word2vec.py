@@ -61,14 +61,8 @@ if __name__ == "__main__":
         # Download Biomed XML as a block of text
         textblock = utils.get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
 
-        # Parse into <p> tags, each of which may be a fragment, a sentence or a
-        # bunch of sentences
-        p_texts = utils.retrieve_sentences_from_Biomed_textblock(textblock)
-
-        # Parse p tag content into individual sentences
-        curr_sentences = [sent
-                for p_text in p_texts
-                for sent in sentenize(p_text)]
+        # Get sentences from Biomed article
+        curr_sentences = utils.retrieve_sentences_from_Biomed_textblock(textblock)
 
         sentences.extend(curr_sentences)
 
