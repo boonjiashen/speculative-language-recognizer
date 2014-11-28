@@ -16,6 +16,23 @@ import os
 import random
 from Word2VecScorer import Word2VecScorer
 
+def yield_file_contents(filenames, directory=''):
+    """Return contents of files one-by-one as textblocks"""
+    for filename in filenames:
+        full_path = os.path.join(directory, filename)
+        with open(full_path) as fid:
+            article = fid.read()
+        yield article
+
+
+def yield_shuffled_sentences_from_Biomed_article(article):
+    """Return sentences one-by-one from a Biomed article in XML.
+    """
+    sentences = utils.retrieve_sentences_from_Biomed_textblock(article)
+    random.shuffle(sentences)
+    for sentence in sentences:
+        yield sentence
+
 
 if __name__ == "__main__":
 
@@ -61,11 +78,7 @@ if __name__ == "__main__":
         xml_filenames = xml_filenames[:n_articles]
 
         # Read in articles one by one
-        for filename in xml_filenames:
-            full_path = os.path.join(src_dir, filename)
-            with open(full_path) as fid:
-                article = fid.read()
-                articles.append(article)
+        articles = yield_file_contents(xml_filenames, directory=src_dir)
 
     else:  # Get articles from Internet
 
@@ -96,25 +109,32 @@ if __name__ == "__main__":
     ######################### Parse articles into tokenized sentences #########
 
     # Parse articles into sentences
-    sentences = [sentence
+    sentences = (sentence
             for article in articles
-            for sentence in utils.retrieve_sentences_from_Biomed_textblock(article)]
-
-    # Shuffle sentences
-    random.shuffle(sentences)
+            for sentence in yield_shuffled_sentences_from_Biomed_article(article))
 
     # Get tokenized sentences from Biomed articles
-    tokenized_sentences = [[word.lower() for word in nltk.word_tokenize(sentence)]
-            for sentence in sentences]
+    if verbose:
+        sys.stdout.write('Creating list of tokenized sentences... ')
+        sys.stdout.flush()
+    tokenized_sentences = [
+            [word.lower() for word in nltk.word_tokenize(sentence)]
+            for sentence in sentences
+            ]
+    if verbose:
+        sys.stdout.write('done.\n')
 
-    get_sentences = lambda: tokenized_sentences;
+    get_sentences = lambda: tokenized_sentences
 
 
     ######################### Train model ##################################### 
 
     if verbose:
-        sys.stdout.write('Training model with %i sentences... ' %  \
-                len([i for i in get_sentences()]))
+        if isinstance(get_sentences(), list):
+            sys.stdout.write('Training model with %i sentences... ' %  \
+                    len(get_sentences()))
+        else:
+            sys.stdout.write('Training model... ')
         sys.stdout.flush()
 
     # Train word2vec model
