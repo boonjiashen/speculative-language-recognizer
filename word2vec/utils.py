@@ -132,9 +132,20 @@ def write_Biomed_XML_to_file(src_filename="cc13902.xml", dst_filename="dummy",
 
 if __name__ == '__main__':
 
-    filename = 'data/cc13902.xml'
-    with open(filename, 'rb') as fid:
 
-        textblock = fid.read()
+    # Read list of XML filenames
+    filenames_file = 'data/Biomed_filenames'  # File storing filenames
+    with open(filenames_file) as fid:
+        xml_filenames = fid.read().splitlines()
 
-    sentences = retrieve_sentences_from_Biomed_textblock(textblock)
+    # Download a couple of files
+    n_filenames = 3  # No. of articles we want to download
+    sentences = []
+    for filename in xml_filenames[:n_filenames]:
+        ftp = get_Biomed_FTP_object()
+        textblock = get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
+        curr_sentences = retrieve_sentences_from_Biomed_textblock(textblock)
+
+        sentences.extend(curr_sentences)
+
+    ftp.close()
