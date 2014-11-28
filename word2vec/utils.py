@@ -38,6 +38,23 @@ def get_parser(default_n_epochs=5, default_min_word_count=5):
     return parser
 
 
+def retrieve_sentences_from_Biomed_textblock(textblock):
+    """Returns a list of sentences from a textblock of a single Biomed article
+
+    Resource:
+    http://www.biomedcentral.com/about/datamining
+    """
+
+    # If the textblock has '\n', BeautifulSoup cannot find <p> tags
+    # Not sure why.
+    textblock = textblock.replace('\n', '')
+
+    soup = BeautifulSoup(textblock)
+    sentences = [tag.get_text() for tag in soup.find_all('p')]
+
+    return sentences
+
+
 def download_XML_from_Biomed(src_filename="cc13902.xml", dst_filename="dummy"):
     """Returns a XML textblock from a Biomed article
 
@@ -68,7 +85,17 @@ def download_XML_from_Biomed(src_filename="cc13902.xml", dst_filename="dummy"):
     else:
 
         # Write XML file to disk
-        with open(dst_filename, 'w') as fid:
+        with open(dst_filename, 'wb') as fid:
             ftp.retrbinary('RETR %s' % src_filename, callback=fid.write)
 
     ftp.close()
+
+
+if __name__ == '__main__':
+
+    filename = 'data/cc13902.xml'
+    with open(filename, 'rb') as fid:
+
+        textblock = fid.read()
+
+    sentences = retrieve_sentences_from_Biomed_textblock(textblock)
