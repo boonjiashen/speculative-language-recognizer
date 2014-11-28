@@ -2,6 +2,7 @@
 """
 
 import argparse
+from ftplib import FTP
 from bs4 import BeautifulSoup
 
 
@@ -55,40 +56,76 @@ def retrieve_sentences_from_Biomed_textblock(textblock):
     return sentences
 
 
-def download_XML_from_Biomed(src_filename="cc13902.xml", dst_filename="dummy"):
-    """Returns a XML textblock from a Biomed article
+def get_Biomed_FTP_object():
+    """Returns a Python FTP object after logging in to Biomed Central
+
+    Object has to be closed after use.
+
+    >>> ftp = get_Biomed_FTP_object()  # login
+    >>> ftp.cwd('articles')  # cd to another directory
+    >>> # etc
+    >>> ftp.close()
+    """
+
+    ftp = FTP('ftp.biomedcentral.com')  # connect to server
+    ftp.login('datamining', '$8Xguppy')  # login with username and password
+    ftp.cwd('articles')  # walk to the directory with all the XML files
+
+    return ftp
+
+
+def get_Biomed_XML_as_string(src_filename="cc13902.xml", ftp=None):
+    """Downloads a Biomed article and returns it as a string.
+
+    If ftp is None, program logs in to Biomed FTP server, downloads the file
+    and logs out. Otherwise, uses the given ftp object and doesn't close ftp.
+    """
+
+    data = []
+    def handle_binary(more_data):
+        """Tells ftp to append downloaded text to a list.
+
+        Source:
+        http://stackoverflow.com/questions/18772703/read-a-file-in-buffer-from-ftp-python
+        """
+
+        data.append(more_data)
+
+    # Open connection to FTP
+    ftp_given = ftp is not None
+    if not ftp_given:
+        ftp = get_Biomed_FTP_object()
+
+    ftp.retrbinary('RETR %s' % src_filename, callback=handle_binary)
+
+    if not ftp_given:
+        ftp.close()
+
+    return data[0]
+
+
+def write_Biomed_XML_to_file(src_filename="cc13902.xml", dst_filename="dummy",
+    ftp=None,):
+    """Downloads a Biomed article and writes it to file.
+
+    If ftp is None, program logs in to Biomed FTP server, downloads the file
+    and logs out. Otherwise, uses the given ftp object and doesn't close ftp.
 
     Resource:
     http://www.biomedcentral.com/about/datamining
     """
 
-    from ftplib import FTP
-    ftp = FTP('ftp.biomedcentral.com')  # connect to server
-    ftp.login('datamining', '$8Xguppy')  # login with username and password
-    ftp.cwd('articles')  # walk to the directory with all the XML files
+    # Open connection to FTP
+    ftp_given = ftp is not None
+    if not ftp_given:
+        ftp = get_Biomed_FTP_object()
 
-    if False:
+    # Write XML file to disk
+    with open(dst_filename, 'wb') as fid:
+        ftp.retrbinary('RETR %s' % src_filename, callback=fid.write)
 
-        # Assign XML file to string
-        data = []
-        def handle_binary(more_data):
-            """Tells ftp to append downloaded text to a list.
-
-            Source:
-            http://stackoverflow.com/questions/18772703/read-a-file-in-buffer-from-ftp-python
-            """
-
-            data.append(more_data)
-
-        ftp.retrbinary('RETR %s' % src_filename, callback=handle_binary)
-
-    else:
-
-        # Write XML file to disk
-        with open(dst_filename, 'wb') as fid:
-            ftp.retrbinary('RETR %s' % src_filename, callback=fid.write)
-
-    ftp.close()
+    if not ftp_given:
+        ftp.close()
 
 
 if __name__ == '__main__':
