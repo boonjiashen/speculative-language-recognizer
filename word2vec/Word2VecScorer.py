@@ -27,12 +27,7 @@ class Word2VecScorer(object):
         with open(evaluation_filename) as fid:
             lines = fid.read().splitlines()
 
-        # Find out where the grammar categories start.
-        start_ind = [ind for ind, line in enumerate(lines)
-                if line[0] == ':' and 'gram' in line][0]
-
-        # Grab all grammar comparisons as a list of 4-ples
-        # We happen to know all the grammar comparisons are at the end of the file.
+        # Grab all test-able comparisons as a list of 4-ples
         vocab = set(model.vocab.keys())
         for line in lines:
 
