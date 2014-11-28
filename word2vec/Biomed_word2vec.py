@@ -12,6 +12,7 @@ import nltk
 import argparse
 import utils
 import sys
+from Word2VecScorer import Word2VecScorer
 
 
 if __name__ == "__main__":
@@ -19,11 +20,7 @@ if __name__ == "__main__":
 
     ######################## Parse command-line arguments ##################### 
 
-    parser = argparse.ArgumentParser()
-
-    # Add argument for more verbose stdout
-    parser.add_argument("-v", "--verbose",
-            help="print status during program execution", action="store_true")
+    parser = utils.get_parser()
 
     # No. of articles we want to download
     parser.add_argument('n_articles', metavar='n_articles', type=int,
@@ -32,8 +29,13 @@ if __name__ == "__main__":
     # Grab arguments from stdin
     args = parser.parse_args()
 
-    # Move cmd arguments to be local variables
+    # Check that the expected arguments are in args
+    expected_args = ['n_epochs', 'verbose']
+    assert set(expected_args) <= set(args.__dict__)
+
+    # Convert parsed inputs into local variables
     locals().update(args.__dict__)
+    min_word_count = min_count
 
 
     ################### Load sentences ########################################
@@ -62,6 +64,7 @@ if __name__ == "__main__":
 
     if verbose: sys.stdout.write('done.\n')
 
+
     ######################### Train model ##################################### 
 
     # Get tokenized sentences from Biomed articles
@@ -77,12 +80,27 @@ if __name__ == "__main__":
 
     # Train word2vec model
     word_vector_length = 50  # Length of a single word vector
-    min_word_count = 5  # Min count to allow a word in the vocabulary
     model = gensim.models.Word2Vec(
             size=word_vector_length,
             min_count=min_word_count)
+
+
+    # Build vocabulary
     model.build_vocab(get_sentences())
-    model.train(get_sentences())
+
+    # Create scorer based in this model
+    scorer = Word2VecScorer(model)
+
+    # Get score for each training epoch
+    for ei in range(n_epochs):
+
+        # Train for one epoch
+        model.train(get_sentences())
+
+        # Evaluate model after each epoch
+        scores = [scorer.score(model, topn, percentage=False)
+                for topn in [1, 2, 3, 4, 5]]
+        print ('After %i epochs, score is' % (ei + 1)), scores
 
     if verbose: sys.stdout.write('done.\n')
     
