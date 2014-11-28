@@ -91,28 +91,6 @@ if __name__ == "__main__":
     # Create scorer based in this model
     scorer = Word2VecScorer(model)
 
-    def get_mean_similarity():
-        "1 number metric on how well a word2vec model is doing"
-
-        model.init_sims()
-        def get_norm_vector(word):
-            return model.syn0norm[model.vocab[word].index]
-        similarities = []  # How well model does for each comparison
-        for pos1, neg1, pos2, neg2 in scorer.comparisons:
-
-            # Get offsets pos1-neg1 and pos2-neg2
-            # These vectors should be similar in a well-trained model
-            offsets = [get_norm_vector(pos) - get_norm_vector(neg)
-                    for pos, neg in [(pos1, neg1), (pos2, neg2)]]
-
-            similarity = np.dot(offsets[0], offsets[1])
-
-            similarities.append(similarity)
-
-        mean_similarity = np.mean(similarities) if similarities else 0
-
-        return mean_similarity
-
     # Get score for each training epoch
     for ei in range(n_epochs):
 
@@ -121,7 +99,7 @@ if __name__ == "__main__":
         model.train(get_sentences())
 
         # Evaluate model after each epoch
-        score = get_mean_similarity()
+        score = scorer.mean_similarity(model)
         #scores = [scorer.score(model, topn, percentage=False)
                 #for topn in [1, 2, 3, 4, 5]]
         print ('After %i epochs, score is' % (ei + 1)), score

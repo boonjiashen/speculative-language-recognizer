@@ -1,3 +1,5 @@
+import numpy as np
+
 class Word2VecScorer(object):
     """Scorer for a word2vec or doc2vec model, using Google's set of analogous
     comparisons.
@@ -82,3 +84,33 @@ class Word2VecScorer(object):
             return score, correct_comparisons
         else:
             return score
+
+    def mean_similarity(self, model):
+        """1 number metric on how well a word2vec model is doing.
+        
+        The higher the better.
+        """
+
+        model.init_sims()
+
+        def get_norm_vector(word):
+            "Get normalized word vector of a word in a model"
+            return model.syn0norm[model.vocab[word].index]
+
+        similarities = []  # How well model does for each comparison
+        for pos1, neg1, pos2, neg2 in self.comparisons:
+
+            # Get offsets pos1-neg1 and pos2-neg2
+            # These vectors should be similar in a well-trained model
+            offsets = [get_norm_vector(pos) - get_norm_vector(neg)
+                    for pos, neg in [(pos1, neg1), (pos2, neg2)]]
+
+            # Get similarity between the two offsets
+            similarity = np.dot(offsets[0], offsets[1])
+
+            similarities.append(similarity)
+
+        mean_similarity = np.mean(similarities) if similarities else 0
+
+        return mean_similarity
+
