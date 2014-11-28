@@ -50,15 +50,27 @@ if __name__ == "__main__":
             'Downloading %i Biomed articles... ' % n_articles)
         sys.stdout.flush()
 
+    # Define a function that tokenizes a block of text into sentences
+    sentenize = nltk.data.load('tokenizers/punkt/english.pickle').tokenize
+
     # Download a couple of Biomedical articles and grab their sentences
-    p_texts = []  # text of <p> tags from Biomed XML files
-                    # Most are single sentences but some have more than one
+    sentences = []
     ftp = utils.get_Biomed_FTP_object()  # Login to FTP and cd to appropriate dir
     for filename in xml_filenames[:n_articles]:
-        textblock = utils.get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
-        curr_sentences = utils.retrieve_sentences_from_Biomed_textblock(textblock)
 
-        p_texts.extend(curr_sentences)
+        # Download Biomed XML as a block of text
+        textblock = utils.get_Biomed_XML_as_string(ftp=ftp, src_filename=filename)
+
+        # Parse into <p> tags, each of which may be a fragment, a sentence or a
+        # bunch of sentences
+        p_texts = utils.retrieve_sentences_from_Biomed_textblock(textblock)
+
+        # Parse p tag content into individual sentences
+        curr_sentences = [sent
+                for p_text in p_texts
+                for sent in sentenize(p_text)]
+
+        sentences.extend(curr_sentences)
 
     ftp.close()  # Close FTP connection
 
@@ -69,7 +81,7 @@ if __name__ == "__main__":
 
     # Get tokenized sentences from Biomed articles
     tokenized_sentences = [[word.lower() for word in nltk.word_tokenize(sentence)]
-            for sentence in p_texts]
+            for sentence in sentences]
 
     get_sentences = lambda: tokenized_sentences;
 
