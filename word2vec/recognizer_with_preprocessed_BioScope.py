@@ -30,6 +30,7 @@ import numpy as np
 import argparse
 import random
 import sklearn.tree
+import sklearn.linear_model
 import sklearn.metrics
 import utils
 
@@ -131,7 +132,11 @@ if __name__ == "__main__":
     model.build_vocab(LStrain + LStest)  # Build vocab using entire dataset
                         # Without the identifiers of the test set we cannot run
                         # prediction on the test set. Strange API behavior.
-    model.train(LStrain)  # train using training set
+                        
+    if verbose:
+        print 'Training over %i epochs' % n_epochs
+    for ei in range(n_epochs):
+        model.train(LStrain)  # train using training set
     
 
     ######################### Train phrase vector classifier ##################
@@ -146,29 +151,40 @@ if __name__ == "__main__":
         vectors.append(vector)
     Xtrain = np.vstack(vectors)
 
-    # Train decision tree!
-    clf = sklearn.tree.DecisionTreeClassifier()
-    clf = clf.fit(Xtrain, ytrain)
+    # Define several classifiers
+    clfs = [
+            sklearn.tree.DecisionTreeClassifier(),
+            sklearn.linear_model.LogisticRegression(),
+            ]
+
+    # Train classifiers
+    for clf in clfs:
+        clf.fit(Xtrain, ytrain)
 
 
     ######################### Test time: predict test sentences ############### 
 
     # Generate vector representation of test sentences
     model.train_words = False  # Freeze weights for word vector learning
-    model.train(LStest)
+
+    if verbose:
+        print 'Testing over', n_epochs, 'epochs'
+    for ei in range(n_epochs):
+        model.train(LStest)
 
     # Construct matrix of test sentences
     Xtest = np.vstack([model[sentence.labels[0]] for sentence in LStest])
 
     # Predict speculative or not
-    predictions = clf.predict(Xtest)
+    prediction_sets = [clf.predict(Xtest) for clf in clfs]
 
     ######################### Print classification metrices ###################
 
-    target_names = ['non-speculative', 'speculative']
-    classification_report = sklearn.metrics.classification_report(
-            ytest, predictions, target_names=target_names)
-    accuracy = sklearn.metrics.accuracy_score(ytest, predictions)
-    f1 = sklearn.metrics.f1_score(ytest, predictions)
+    for predictions, clf in zip(prediction_sets, clfs):
+        target_names = ['non-speculative', 'speculative']
+        classification_report = sklearn.metrics.classification_report(
+                ytest, predictions, target_names=target_names)
+        accuracy = sklearn.metrics.accuracy_score(ytest, predictions)
+        f1 = sklearn.metrics.f1_score(ytest, predictions)
 
-    print 'accuracy = %f | F1 = %f' % (accuracy, f1)
+        print clf.__class__, 'accuracy = %f | F1 = %f' % (accuracy, f1)
