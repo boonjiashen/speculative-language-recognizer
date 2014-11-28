@@ -47,7 +47,7 @@ class Word2VecScorer(object):
 
             self.comparisons.append(tokens)
 
-    def score(self, model, topn, return_correct_comparisons=False):
+    def score(self, model, topn, percentage=True, return_correct_comparisons=False):
         """Score a model by how many correct comparisons it makes from the
         set of analogies
 
@@ -78,8 +78,9 @@ class Word2VecScorer(object):
             except KeyError:
                 continue
 
-        score = 1. * len(correct_inds) / len(self.comparisons)  \
-            if self.comparisons else 0
+        score = len(correct_inds) if self.comparisons else 0
+        if percentage:
+            score = float(score) / len(self.comparisons)
         correct_comparisons = [self.comparisons[i] for i in correct_inds]
 
         if return_correct_comparisons:
