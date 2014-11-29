@@ -184,7 +184,15 @@ if __name__ == "__main__":
         target_names = ['non-speculative', 'speculative']
         classification_report = sklearn.metrics.classification_report(
                 ytest, predictions, target_names=target_names)
-        accuracy = sklearn.metrics.accuracy_score(ytest, predictions)
-        f1 = sklearn.metrics.f1_score(ytest, predictions)
+        metric_funs = [sklearn.metrics.accuracy_score,
+                    sklearn.metrics.f1_score,
+                    sklearn.metrics.precision_score,
+                    sklearn.metrics.recall_score,
+                    ]
+        metrics = [fun(ytest, predictions) for fun in metric_funs]
 
-        print clf.__class__, 'accuracy = %f | F1 = %f' % (accuracy, f1)
+        if verbose:
+            metric_names = [fun.__name__.split('_')[0] for fun in metric_funs]
+            metrics_as_string = ' | '.join([name + ' = ' + ('%.3f' % metric)
+                    for name, metric in zip(metric_names, metrics)])
+            print clf.__class__, metrics_as_string
