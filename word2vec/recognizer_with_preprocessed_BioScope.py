@@ -33,9 +33,11 @@ import sklearn.tree
 import sklearn.linear_model
 import sklearn.metrics
 import utils
+from Word2VecScorer import Word2VecScorer
 
 if __name__ == "__main__":
 
+    random.seed(0)
 
     ######################## Parse command-line arguments ##################### 
 
@@ -44,6 +46,13 @@ if __name__ == "__main__":
     # Add required argument of training data
     parser.add_argument('filename', metavar='filepath', type=str,
             help='pre-processed data file containing labeled sentences')
+
+    # Learning rate
+    default_learning_rate = 0.025
+    parser.add_argument('--learning_rate', type=float,
+            help='constant learning rate for training (default=%f)'  \
+                    % default_learning_rate,
+            default=default_learning_rate)
 
     # Grab arguments from stdin
     args = parser.parse_args()
@@ -133,10 +142,20 @@ if __name__ == "__main__":
                         # Without the identifiers of the test set we cannot run
                         # prediction on the test set. Strange API behavior.
                         
-    if verbose:
-        print 'Training over %i epochs' % n_epochs
+    # Create scorer based in this model
+    scorer = Word2VecScorer(model)
+
+    # Get score for each training epoch
     for ei in range(n_epochs):
-        model.train(LStrain)  # train using training set
+
+        # Train for one epoch
+        model.alpha = model.min_alpha = learning_rate
+        model.train(LStrain)
+
+        # Evaluate model after each epoch
+        score = scorer.mean_similarity(model)
+
+        print ('After %i epochs, score is' % (ei + 1)), score
     
 
     ######################### Train phrase vector classifier ##################
