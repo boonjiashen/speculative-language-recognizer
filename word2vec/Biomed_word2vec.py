@@ -14,6 +14,7 @@ import utils
 import sys
 import os
 import random
+import logging
 from Word2VecScorer import Word2VecScorer
 
 @utils.multigen
@@ -27,6 +28,10 @@ def yield_file_contents(filenames, directory=''):
 
 
 if __name__ == "__main__":
+
+    logging.basicConfig(
+            format='%(asctime)s : %(levelname)s : %(message)s',
+            level=logging.INFO)
 
     random.seed(0)  # seed RNG to make it deterministic in each run
 
@@ -125,10 +130,11 @@ if __name__ == "__main__":
         sys.stdout.flush()
 
     # Train word2vec model
-    word_vector_length = 50  # Length of a single word vector
+    word_vector_length = 52  # Length of a single word vector
     model = gensim.models.Word2Vec(
             size=word_vector_length,
-            min_count=min_word_count)
+            min_count=min_word_count,
+            workers=2)
 
     # Build vocabulary
     model.build_vocab(get_sentences())
