@@ -107,6 +107,8 @@ if __name__ == "__main__":
 
     ######################### Train and test each algorithm ###################
 
+    clfs = []  # Store classifiers in case we want to use them in ipython
+    #conf_lists = []  # list of confidence for each classifier
     for pipeline_name, pipeline in named_pipelines:
 
         # Train classifier
@@ -116,9 +118,9 @@ if __name__ == "__main__":
         predictions = clf.predict(Stest)
 
         # Calculate performance metrics
-        classification_report = metrics.classification_report(ytest, predictions)
-        accuracy = metrics.accuracy_score(ytest, predictions)
         f1 = metrics.f1_score(ytest, predictions)
+        precision = metrics.precision_score(ytest, predictions)
+        recall = metrics.recall_score(ytest, predictions)
 
         # Width of 1st column for printing
         field_width = max(map(len, zip(*named_pipelines)[0]))
@@ -126,5 +128,14 @@ if __name__ == "__main__":
         # Print performance metrics
         print 'Pipeline:', \
             (('%-' + str(field_width) + 's') % pipeline_name),  \
-            ' | F1 score = %f' % f1
+            ' | F1 score = %.3f' % f1,  \
+            ' | precision = %.3f' % precision,  \
+            ' | recall = %.3f' % recall 
 
+        #clfs.append(clf)
+
+        #try:
+            #clf.predict_proba(Stest)
+            #print pipeline_name, 'has prict proba'
+        #except AttributeError:
+            #print pipeline_name, 'does not have prict proba'
