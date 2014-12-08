@@ -18,6 +18,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
@@ -30,14 +31,19 @@ if __name__ == "__main__":
             help="print status during program execution", action="store_true")
 
     # Add required argument of training data
-    parser.add_argument('filename', metavar='filepath', type=str,
+    parser.add_argument('input_filename', type=str,
             help='pre-processed data file containing labeled sentences')
+
+    # Add optional argument of output filename
+    parser.add_argument('--save', dest='output_filename', type=str,
+            help='Output filename to save ROC curves to (default: does not save)')
 
     # Grab arguments from stdin
     args = parser.parse_args()
 
     # Filename of training data
-    filename = args.filename
+    filename = args.input_filename
+    output_filename = args.output_filename
 
 
     ######################## Load sentences and labels ########################
@@ -77,9 +83,11 @@ if __name__ == "__main__":
     # Each pipeline is 1 or more transforms on a sentence, followed by a
     # classification.
     named_pipelines = []
-    for binarize_word_counts in [True, False]:  # Word count or word presence
+    for binarize_word_counts in [True, ]:  # Word count or word presence
+    #for binarize_word_counts in [True, ]  # Word count or word presence
         for clf_name, clf_method in named_clf_methods:
             for n_grams in [1, 2]:  # Unigrams or bigrams
+            #for n_grams in [1]:  # Unigrams or bigrams
 
                 # Create the list of transforms and the classifier at the end
                 named_transforms = []
@@ -107,6 +115,9 @@ if __name__ == "__main__":
 
     ######################### Train and test each algorithm ###################
 
+    clfs = []  # Store classifiers in case we want to use them in ipython
+    conf_lists = []  # list of confidence for each classifier
+    named_fpr_tpr = []  # list of (name, fpr, tpr) tuples
     for pipeline_name, pipeline in named_pipelines:
 
         # Train classifier
@@ -116,9 +127,9 @@ if __name__ == "__main__":
         predictions = clf.predict(Stest)
 
         # Calculate performance metrics
-        classification_report = metrics.classification_report(ytest, predictions)
-        accuracy = metrics.accuracy_score(ytest, predictions)
         f1 = metrics.f1_score(ytest, predictions)
+        precision = metrics.precision_score(ytest, predictions)
+        recall = metrics.recall_score(ytest, predictions)
 
         # Width of 1st column for printing
         field_width = max(map(len, zip(*named_pipelines)[0]))
@@ -126,5 +137,51 @@ if __name__ == "__main__":
         # Print performance metrics
         print 'Pipeline:', \
             (('%-' + str(field_width) + 's') % pipeline_name),  \
-            ' | F1 score = %f' % f1
+            ' | F1 score = %.3f' % f1,  \
+            ' | precision = %.3f' % precision,  \
+            ' | recall = %.3f' % recall 
 
+        # Get confidence values on test set
+        try:
+            confidences = clf.predict_proba(Stest)[:, 1]
+        except AttributeError:
+            try:
+                confidences = clf.decision_function(Stest)
+            except AttributeError:
+                assert False
+        conf_lists.append(confidences)
+
+        # Generate data for ROC
+        fpr, tpr, _ = metrics.roc_curve(ytest, confidences)
+
+        # Save data in list
+        named_fpr_tpr.append((pipeline_name, fpr, tpr))
+
+
+    #################### Plot data ############################################
+
+    #plt.figure()
+    #for pipeline_name, fpr, tpr in named_fpr_tpr:
+        #plt.plot(fpr, tpr, label=pipeline_name)
+    #plt.legend(loc='best')
+    #plt.xlabel('TPR')
+    #plt.ylabel('FPR')
+    #plt.title('ROC curves of baseline algorithms')
+    #plt.show()
+
+
+    #################### Save data ############################################
+
+    if output_filename is not None:
+
+        # For each pipeline,
+        # Line 1: pipeline name
+        # Line 2: FPR
+        # Line 3: TPR
+        fid = open(output_filename, 'w')
+        for pipeline_name, fpr, tpr in named_fpr_tpr:
+            fid.write(pipeline_name)
+            fid.write('\n')
+            np.savetxt(fid, fpr, newline=' ', footer='\n', comments='')
+            np.savetxt(fid, tpr, newline=' ', footer='\n', comments='')
+        fid.close()
