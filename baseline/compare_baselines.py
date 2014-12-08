@@ -31,14 +31,19 @@ if __name__ == "__main__":
             help="print status during program execution", action="store_true")
 
     # Add required argument of training data
-    parser.add_argument('filename', metavar='filepath', type=str,
+    parser.add_argument('input_filename', type=str,
             help='pre-processed data file containing labeled sentences')
+
+    # Add optional argument of output filename
+    parser.add_argument('--save', dest='output_filename', type=str,
+            help='Output filename to save ROC curves to (default: does not save)')
 
     # Grab arguments from stdin
     args = parser.parse_args()
 
     # Filename of training data
-    filename = args.filename
+    filename = args.input_filename
+    output_filename = args.output_filename
 
 
     ######################## Load sentences and labels ########################
@@ -163,3 +168,20 @@ if __name__ == "__main__":
     #plt.ylabel('FPR')
     #plt.title('ROC curves of baseline algorithms')
     #plt.show()
+
+
+    #################### Save data ############################################
+
+    if output_filename is not None:
+
+        # For each pipeline,
+        # Line 1: pipeline name
+        # Line 2: FPR
+        # Line 3: TPR
+        fid = open(output_filename, 'w')
+        for pipeline_name, fpr, tpr in named_fpr_tpr:
+            fid.write(pipeline_name)
+            fid.write('\n')
+            np.savetxt(fid, fpr, newline=' ', footer='\n', comments='')
+            np.savetxt(fid, tpr, newline=' ', footer='\n', comments='')
+        fid.close()
