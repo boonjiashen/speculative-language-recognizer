@@ -18,6 +18,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
@@ -77,9 +78,11 @@ if __name__ == "__main__":
     # Each pipeline is 1 or more transforms on a sentence, followed by a
     # classification.
     named_pipelines = []
-    for binarize_word_counts in [True, False]:  # Word count or word presence
+    for binarize_word_counts in [True, ]:  # Word count or word presence
+    #for binarize_word_counts in [True, ]  # Word count or word presence
         for clf_name, clf_method in named_clf_methods:
             for n_grams in [1, 2]:  # Unigrams or bigrams
+            #for n_grams in [1]:  # Unigrams or bigrams
 
                 # Create the list of transforms and the classifier at the end
                 named_transforms = []
@@ -108,7 +111,8 @@ if __name__ == "__main__":
     ######################### Train and test each algorithm ###################
 
     clfs = []  # Store classifiers in case we want to use them in ipython
-    #conf_lists = []  # list of confidence for each classifier
+    conf_lists = []  # list of confidence for each classifier
+    named_fpr_tpr = []  # list of (name, fpr, tpr) tuples
     for pipeline_name, pipeline in named_pipelines:
 
         # Train classifier
@@ -132,10 +136,30 @@ if __name__ == "__main__":
             ' | precision = %.3f' % precision,  \
             ' | recall = %.3f' % recall 
 
-        #clfs.append(clf)
+        # Get confidence values on test set
+        try:
+            confidences = clf.predict_proba(Stest)[:, 1]
+        except AttributeError:
+            try:
+                confidences = clf.decision_function(Stest)
+            except AttributeError:
+                assert False
+        conf_lists.append(confidences)
 
-        #try:
-            #clf.predict_proba(Stest)
-            #print pipeline_name, 'has prict proba'
-        #except AttributeError:
-            #print pipeline_name, 'does not have prict proba'
+        # Generate data for ROC
+        fpr, tpr, _ = metrics.roc_curve(ytest, confidences)
+
+        # Save data in list
+        named_fpr_tpr.append((pipeline_name, fpr, tpr))
+
+
+    #################### Plot data ############################################
+
+    #plt.figure()
+    #for pipeline_name, fpr, tpr in named_fpr_tpr:
+        #plt.plot(fpr, tpr, label=pipeline_name)
+    #plt.legend(loc='best')
+    #plt.xlabel('TPR')
+    #plt.ylabel('FPR')
+    #plt.title('ROC curves of baseline algorithms')
+    #plt.show()
