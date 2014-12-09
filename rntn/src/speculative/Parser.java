@@ -2,6 +2,7 @@ package speculative;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +13,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import edu.stanford.nlp.ling.HasWord;
+import edu.stanford.nlp.process.DocumentPreprocessor;
+
 public class Parser {
 
     /*
@@ -21,8 +25,8 @@ public class Parser {
      */
     public static void main(String[] args) throws Exception {
 
-        String inFile = "res/abstracts.xml";
-        String outFile = "res/parsed.txt";
+        String inFile = "res/full_papers.xml";
+        String outFile = "res/parsed2.txt";
 
         for (int argIndex = 0; argIndex < args.length; argIndex++) {
             if (args[argIndex].equalsIgnoreCase("-input")) {
@@ -67,7 +71,7 @@ public class Parser {
         DefaultHandler handler = new DefaultHandler() {
 
             // Data structures for current sentence
-            List<String> wordList = null;
+            List<HasWord> wordList = null;
             List<Integer[]> spec = null;
             boolean inSentence = false;
             boolean inCue = false;
@@ -80,7 +84,7 @@ public class Parser {
                     if (inSentence)
                         throw new IllegalStateException("Nested sentences are not allowed");
                     inSentence = true;
-                    wordList = new ArrayList<String>();
+                    wordList = new ArrayList<HasWord>();
                     spec = new ArrayList<Integer[]>();
                 } else if (qName.equalsIgnoreCase("CUE")) {
                     if (!inSentence)
@@ -103,14 +107,10 @@ public class Parser {
                     inSentence = false;
                     if (wordList.isEmpty())
                         return;
-                    String[] words = new String[wordList.size()];
-                    for (int i = 0; i < wordList.size(); i++) {
-                        words[i] = wordList.get(i);
-                    }
                     // Add sentence and its the list of its speculative cues to 'sentences'
                     // Label 1 speculative, 0 for non-speculative
                     String label = (spec.isEmpty()) ? "0" : "1";
-                    sentences.add(new Sentence(words, spec, label, "0"));
+                    sentences.add(new Sentence(wordList, spec, label, "0"));
                 } else if (qName.equalsIgnoreCase("CUE")) {
                     // End of cue phrase
                     inCue = false;
@@ -123,18 +123,24 @@ public class Parser {
                     // Tokenize phrase and add to word list
                     // Note indices if cue phrase
                     String part = String.valueOf(ch, start, length);
-                    String[] tokens = part.replaceAll("[^a-zA-Z ]", " ").trim().split("\\s+");
-                    if (tokens != null && tokens[0].isEmpty())
-                        return;
+                    part = part.toLowerCase().trim();
+                    if (part.isEmpty()) {
+                    	return;
+                    }
+                    StringReader sin = new StringReader(part);
+                    DocumentPreprocessor document = new DocumentPreprocessor(sin);
+                    document.setSentenceFinalPuncWords(new String[] {"\n"});
+                    List<HasWord> tokens = document.iterator().next();
+                    if (tokens.isEmpty()) {
+                    	return;
+                    }
                     if (inCue) {
                         Integer[] arr = new Integer[2];
                         arr[0] = wordList.size();
-                        arr[1] = wordList.size() + tokens.length - 1;
+                        arr[1] = wordList.size() + tokens.size() - 1;
                         spec.add(arr);
                     }
-                    for (int i = 0; i < tokens.length; i++) {
-                        wordList.add(tokens[i]);
-                    }
+                    wordList.addAll(tokens);
                 }
             }
 
