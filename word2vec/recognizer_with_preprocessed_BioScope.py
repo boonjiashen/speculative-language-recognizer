@@ -91,7 +91,8 @@ if __name__ == "__main__":
             classes.append(int(tokens[0]))
 
     # Decide which example in dataset goes to training or test set
-    test_proportion = 0.2  # Proportion given to test set
+    test_proportion = 0.3  # Proportion given to test set
+    #cv_proportion = 0.1    # Proportion given to CV set
                            # The rest goes to training set
     n_examples = len(tokenized_sentences)
     inds = range(n_examples)
@@ -145,7 +146,11 @@ if __name__ == "__main__":
     # Create scorer based in this model
     scorer = Word2VecScorer(model)
 
-    # Get score for each training epoch
+    # Train doc2vec model
+    # As a by-product we'll learn the logistic regressor used to predict
+    # labels, since this regressor is used here to monitor the quality of the
+    # learnt doc2vec model
+    clf = sklearn.linear_model.LogisticRegression()
     for ei in range(n_epochs):
 
         # Train for one epoch
@@ -153,7 +158,11 @@ if __name__ == "__main__":
         model.train(LStrain)
 
         # Evaluate model after each epoch
-        score = scorer.mean_similarity(model)
+        # We score by training the features of the training sentences on
+        # a logistic regressor and computing the training error
+        Xtrain = np.vstack([model[sentence.labels[0]] for sentence in LStrain])
+        score = clf.fit(Xtrain, ytrain).score(Xtrain, ytrain)
+        #score = scorer.mean_similarity(model)
 
         print ('After %i epochs, score is' % (ei + 1)), score
     
@@ -197,12 +206,15 @@ if __name__ == "__main__":
     # Predict speculative or not
     prediction_sets = [clf.predict(Xtest) for clf in clfs]
 
+
     ######################### Print classification metrices ###################
 
     for predictions, clf in zip(prediction_sets, clfs):
         target_names = ['non-speculative', 'speculative']
         classification_report = sklearn.metrics.classification_report(
                 ytest, predictions, target_names=target_names)
+        confusion_matrix = sklearn.metrics.confusion_matrix(
+                ytest, predictions)  # , labels=target_names)
         metric_funs = [sklearn.metrics.accuracy_score,
                     sklearn.metrics.f1_score,
                     sklearn.metrics.precision_score,
@@ -214,4 +226,7 @@ if __name__ == "__main__":
             metric_names = [fun.__name__.split('_')[0] for fun in metric_funs]
             metrics_as_string = ' | '.join([name + ' = ' + ('%.3f' % metric)
                     for name, metric in zip(metric_names, metrics)])
-            print clf.__class__, metrics_as_string
+            print clf.__class__
+            print metrics_as_string
+            print classification_report
+            print confusion_matrix
