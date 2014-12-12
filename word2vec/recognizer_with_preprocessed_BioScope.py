@@ -167,29 +167,6 @@ if __name__ == "__main__":
         print ('After %i epochs, score is' % (ei + 1)), score
     
 
-    ######################### Train phrase vector classifier ##################
-
-    # Construct vector representation of sentences
-    #Xtrain = np.vstack([model[sentence.labels[0]] for sentence in LStrain])
-    vectors = []
-    for labeled_sentence in LStrain:
-        id_ = labeled_sentence.labels[0]
-        vector = model[id_]
-
-        vectors.append(vector)
-    Xtrain = np.vstack(vectors)
-
-    # Define several classifiers
-    clfs = [
-            sklearn.tree.DecisionTreeClassifier(),
-            sklearn.linear_model.LogisticRegression(),
-            ]
-
-    # Train classifiers
-    for clf in clfs:
-        clf.fit(Xtrain, ytrain)
-
-
     ######################### Test time: predict test sentences ############### 
 
     # Generate vector representation of test sentences
@@ -204,29 +181,28 @@ if __name__ == "__main__":
     Xtest = np.vstack([model[sentence.labels[0]] for sentence in LStest])
 
     # Predict speculative or not
-    prediction_sets = [clf.predict(Xtest) for clf in clfs]
+    predictions = clf.predict(Xtest)
 
 
     ######################### Print classification metrices ###################
 
-    for predictions, clf in zip(prediction_sets, clfs):
-        target_names = ['non-speculative', 'speculative']
-        classification_report = sklearn.metrics.classification_report(
-                ytest, predictions, target_names=target_names)
-        confusion_matrix = sklearn.metrics.confusion_matrix(
-                ytest, predictions)  # , labels=target_names)
-        metric_funs = [sklearn.metrics.accuracy_score,
-                    sklearn.metrics.f1_score,
-                    sklearn.metrics.precision_score,
-                    sklearn.metrics.recall_score,
-                    ]
-        metrics = [fun(ytest, predictions) for fun in metric_funs]
+    target_names = ['non-speculative', 'speculative']
+    classification_report = sklearn.metrics.classification_report(
+            ytest, predictions, target_names=target_names)
+    confusion_matrix = sklearn.metrics.confusion_matrix(
+            ytest, predictions)  # , labels=target_names)
+    metric_funs = [sklearn.metrics.accuracy_score,
+                sklearn.metrics.f1_score,
+                sklearn.metrics.precision_score,
+                sklearn.metrics.recall_score,
+                ]
+    metrics = [fun(ytest, predictions) for fun in metric_funs]
 
-        if verbose:
-            metric_names = [fun.__name__.split('_')[0] for fun in metric_funs]
-            metrics_as_string = ' | '.join([name + ' = ' + ('%.3f' % metric)
-                    for name, metric in zip(metric_names, metrics)])
-            print clf.__class__
-            print metrics_as_string
-            print classification_report
-            print confusion_matrix
+    if verbose:
+        metric_names = [fun.__name__.split('_')[0] for fun in metric_funs]
+        metrics_as_string = ' | '.join([name + ' = ' + ('%.3f' % metric)
+                for name, metric in zip(metric_names, metrics)])
+        print clf.__class__
+        print metrics_as_string
+        print classification_report
+        print confusion_matrix
