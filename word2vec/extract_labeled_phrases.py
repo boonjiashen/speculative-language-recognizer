@@ -60,11 +60,19 @@ if __name__ == "__main__":
     parser.add_argument('filename', metavar='filepath', type=str,
                                help='XML file to extract phrases from')
 
+    # Optionally generate multiple instances per speculative sentence by
+    # recursion
+    msg = """
+    Do not optionally generate multiple instances per speculative sentence by recursion
+    (recursion is on by default)"""
+    parser.add_argument('--norecurse', action='store_true', help=msg)
+
     # Grab arguments from stdin
     args = parser.parse_args()
 
     # Filename of BioScope XML file
     filename = args.filename
+    norecurse = args.norecurse
 
 
     ######################### Load file, parse file ########################### 
@@ -86,8 +94,9 @@ if __name__ == "__main__":
         else:
             neg_phrases.append(tag.get_text())
 
-        # Push scopes inside phrase, if phrase is speculative
-        if contains_spec_cue:
+        # Recursively generate more speculative instances from speculative
+        # sentences (if allowed by user)
+        if contains_spec_cue and not norecurse:
             pos_phrases.extend(get_speculative_scopes(tag))
 
 
