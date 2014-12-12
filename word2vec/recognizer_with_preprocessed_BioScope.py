@@ -92,21 +92,28 @@ if __name__ == "__main__":
 
     # Decide which example in dataset goes to training or test set
     test_proportion = 0.3  # Proportion given to test set
-    #cv_proportion = 0.1    # Proportion given to CV set
+    cv_proportion = 0.1    # Proportion given to CV set
                            # The rest goes to training set
+
+    # Generate indices of training, CV and test set
     n_examples = len(tokenized_sentences)
     inds = range(n_examples)
     random.shuffle(inds)
     test_inds = inds[:int(test_proportion * n_examples)]
-    train_inds = inds[int(test_proportion * n_examples):]
+    cv_inds = inds[int(test_proportion * n_examples):  \
+            int((test_proportion + cv_proportion) * n_examples)]
+    train_inds = inds[int((test_proportion + cv_proportion) * n_examples):]
 
     # Function to map the index of an example to its identifer
     index2id = lambda index: 'SENT_%06i' % index
 
     # Split dataset into training and test sets
-    LStrain, ytrain, LStest, ytest = [], [], [], []
+    LScv, ycv, LStrain, ytrain, LStest, ytest = [], [], [], [], [], []
     LabeledSentence = gensim.models.doc2vec.LabeledSentence
-    for to_test, inds in [(True, test_inds), (False, train_inds)]:
+    for LSlist, ylist, inds in [
+            (LScv, ycv, cv_inds),
+            (LStest, ytest, test_inds),
+            (LStrain, ytrain, train_inds)]:
         for ind in inds:
 
             # Construct labeled sentence given the index in the dataset
@@ -118,17 +125,12 @@ if __name__ == "__main__":
             class_ = classes[ind]
 
             # Push to either training or test set
-            if to_test:
-                LStest.append(LS)
-                ytest.append(class_)
-            else:
-                LStrain.append(LS)
-                ytrain.append(class_)
+            LSlist.append(LS)
+            ylist.append(class_)
 
     # Make sure that no. of examples doesn't exceed 6 digits
     # otherwise we need to expand the no. of identifiers of the sentences
     assert len(tokenized_sentences) < 10**6
-
 
     ######################### Train doc2vec model ############################# 
 
