@@ -38,6 +38,10 @@ if __name__ == "__main__":
     parser.add_argument('--save', dest='output_filename', type=str,
             help='Output filename to save ROC curves to (default: does not save)')
 
+    # Option to plot ROC curves
+    parser.add_argument('--plot', dest='doplot', action='store_true',
+            help='Plot ROC curves of models')
+
     # Grab arguments from stdin
     args = parser.parse_args()
 
@@ -160,14 +164,15 @@ if __name__ == "__main__":
 
     #################### Plot data ############################################
 
-    #plt.figure()
-    #for pipeline_name, fpr, tpr in named_fpr_tpr:
-        #plt.plot(fpr, tpr, label=pipeline_name)
-    #plt.legend(loc='best')
-    #plt.xlabel('TPR')
-    #plt.ylabel('FPR')
-    #plt.title('ROC curves of baseline algorithms')
-    #plt.show()
+    if args.doplot:
+        plt.figure()
+        for pipeline_name, fpr, tpr in named_fpr_tpr:
+            plt.plot(fpr, tpr, label=pipeline_name)
+        plt.legend(loc='best')
+        plt.xlabel('TPR')
+        plt.ylabel('FPR')
+        plt.title('ROC curves of baseline algorithms')
+        plt.show()
 
 
     #################### Save data ############################################
