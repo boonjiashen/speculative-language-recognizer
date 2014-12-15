@@ -1,7 +1,10 @@
 package speculative;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +30,8 @@ public class Train {
         String devPath = "res/dev.txt";
         String testPath = "res/test.txt";
         String modelPath = "res/model.ser.gz";
+        boolean log = true;
+        String logFile = "res/log.txt";
 
         for (int argIndex = 0; argIndex < args.length; argIndex++) {
             if (args[argIndex].equalsIgnoreCase("-input")) {
@@ -39,6 +44,8 @@ public class Train {
                 testPath = args[++argIndex];
             } else if (args[argIndex].equalsIgnoreCase("-model")) {
                 modelPath = args[++argIndex];
+            } else if (args[argIndex].equalsIgnoreCase("-log")) {
+                logFile = args[++argIndex];
             } else {
                 System.err.println("Unknown argument " + args[argIndex]);
                 System.exit(2);
@@ -115,7 +122,7 @@ public class Train {
 
         List<String> trainOptions = new ArrayList<String>();
         trainOptions.add("-epochs");
-        trainOptions.add("400");
+        trainOptions.add("401");
         String[] trainOptionsArr = new String[trainOptions.size()];
         for (int i = 0; i < trainOptions.size(); i++) {
             trainOptionsArr[i] = trainOptions.get(i);
@@ -125,12 +132,24 @@ public class Train {
             index = op.trainOptions.setOption(trainOptionsArr, index);
         }
 
-        System.err.println("Sentiment model options:\n" + op);
+        System.out.println("Sentiment model options:\n" + op);
         SentimentModel model = new SentimentModel(op, trainingTrees);
 
+        PrintStream console = System.out;
+        if (log) {
+        	System.out.println("Redirecting output to log file: " + logFile);
+            File lfile = new File(logFile);
+            FileOutputStream fos = new FileOutputStream(lfile);
+            PrintStream ps = new PrintStream(fos);
+            System.setOut(ps);
+            System.setErr(ps);
+        }
         SentimentTraining.train(model, modelPath, trainingTrees, devTrees);
         model.saveSerialized(modelPath);
+        if (log) {
+            System.setOut(console);
+            System.setErr(console);
+        }
         System.out.println("Training complete");
     }
-
 }

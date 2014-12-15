@@ -33,13 +33,7 @@ public class BinarizeDataset {
         for (int i = 0; i < sentences.size(); i++) {
             System.out.println("Now binarizing and labeling sentence " + i);
             Sentence s = sentences.get(i);
-            String[] words = s.words;
-            // Tokenize the sentence
-            String sentence = String.join(" ", words);
-            StringReader sin = new StringReader(sentence);
-            DocumentPreprocessor document = new DocumentPreprocessor(sin);
-            document.setSentenceFinalPuncWords(new String[] {"\n"});
-            List<HasWord> tokens = document.iterator().next();
+            List<HasWord> tokens = s.words;
 
             // Parse the sentence to generate binary tree
             Tree tree = parser.apply(tokens);
