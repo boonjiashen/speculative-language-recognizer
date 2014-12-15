@@ -26,6 +26,15 @@ def yield_file_contents(filenames, directory=''):
             article = fid.read()
         yield article
 
+@utils.multigen
+def yield_tokenized_sentences(articles):
+    "Get tokenized sentences from Biomed articles"
+
+    for article in articles:
+        sentences = utils.retrieve_sentences_from_Biomed_textblock(article)
+        for sentence in sentences:
+            yield [word.lower() for word in nltk.word_tokenize(sentence)]
+
 
 if __name__ == "__main__":
 
@@ -104,14 +113,6 @@ if __name__ == "__main__":
 
 
     ######################### Parse articles into tokenized sentences #########
-
-    # Get tokenized sentences from Biomed articles
-    @utils.multigen
-    def yield_tokenized_sentences(articles):
-        for article in articles:
-            sentences = utils.retrieve_sentences_from_Biomed_textblock(article)
-            for sentence in sentences:
-                yield [word.lower() for word in nltk.word_tokenize(sentence)]
 
     # Tokenized sentences is an object that can be called more than once
     tokenized_sentences = yield_tokenized_sentences(articles)
