@@ -44,6 +44,34 @@ import utils
 from Word2VecScorer import Word2VecScorer
 from Biomed_word2vec import yield_file_contents, yield_tokenized_sentences
 
+def print_confusion_matrix(y_true, y_pred):
+    "Print the confusion matrix of a binary classifier"
+
+    # y_true and y_pred has to contain 0 and 1 and ONLY 0 and 1
+    unique_values = set([val for vals in [y_true, y_pred] for val in vals])
+    assert len(unique_values) == 2
+    assert 0 in unique_values and 1 in unique_values
+
+    confusion_matrix = sklearn.metrics.confusion_matrix(
+            y_true, y_pred)  # , labels=target_names)
+
+    # Convert confusion matrix into a table with row and col labels
+    cm = confusion_matrix
+    table = [
+            ['',     'labeled_0',   'labeled_1'],
+            ['is_0', str(cm[0, 0]), str(cm[0, 1])],
+            ['is_1', str(cm[1, 0]), str(cm[1, 1])],
+            ]
+
+    # Measure largest field width in table, for printing
+    field_width = max([len(elem) for row in table for elem in row])
+
+    # Print table
+    for row in table:
+        elements = [(('%' + str(field_width) + 's') % elem) for elem in row]
+        print ' '.join(elements)
+    
+
 def load_preprocessed_BioScope(filename):
     "Load classes and tokenized sentences from file"
 
@@ -236,6 +264,7 @@ if __name__ == "__main__":
     model.train_words = False  # Freeze weights of word vector learning
 
     n_test_epochs = 50
+    n_test_epochs = 1
     if verbose:
         print 'Testing over', n_test_epochs, 'epochs'
     for ei in range(n_test_epochs):
@@ -254,8 +283,6 @@ if __name__ == "__main__":
     target_names = ['non-speculative', 'speculative']
     classification_report = sklearn.metrics.classification_report(
             ytest, predictions, target_names=target_names)
-    confusion_matrix = sklearn.metrics.confusion_matrix(
-            ytest, predictions)  # , labels=target_names)
     metric_funs = [sklearn.metrics.accuracy_score,
                 sklearn.metrics.f1_score,
                 sklearn.metrics.precision_score,
@@ -271,7 +298,7 @@ if __name__ == "__main__":
         print metrics_as_string
         print classification_report
         print 'Confusion matrix:'
-        print confusion_matrix
+        print_confusion_matrix(ytest, predictions)
 
         print 'Trained with %i Biomed sentences and %i BioScope sentences' %  \
                 (n_unlabeled_examples, n_labeled_examples)
