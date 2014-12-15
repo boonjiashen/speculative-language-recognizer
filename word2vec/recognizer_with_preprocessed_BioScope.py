@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # Decide which example in dataset goes to training or test set
     test_proportion = 0.3  # Proportion given to test set
-    cv_proportion = 0.1    # Proportion given to CV set
+    cv_proportion = 0.0    # Proportion given to CV set
                            # The rest goes to training set
 
     # Generate indices of training, CV and test set
@@ -132,6 +132,7 @@ if __name__ == "__main__":
     # otherwise we need to expand the no. of identifiers of the sentences
     assert len(tokenized_sentences) < 10**6
 
+
     ######################### Train doc2vec model ############################# 
 
     # Initialize word model (no training here)
@@ -141,7 +142,8 @@ if __name__ == "__main__":
             min_count=min_word_count)
 
     # Train word2vec model
-    model.build_vocab(LStrain + LStest)  # Build vocab using entire dataset
+    model.build_vocab(LStrain + LStest + LScv)
+                        # Build vocab using entire dataset
                         # Without the identifiers of the test set we cannot run
                         # prediction on the test set. Strange API behavior.
                         
@@ -161,22 +163,52 @@ if __name__ == "__main__":
 
         # Evaluate model after each epoch
         # We score by training the features of the training sentences on
-        # a logistic regressor and computing the training error
+        # a logistic regressor and computing the F1 on the training data
         Xtrain = np.vstack([model[sentence.labels[0]] for sentence in LStrain])
-        score = clf.fit(Xtrain, ytrain).score(Xtrain, ytrain)
+        clf.fit(Xtrain, ytrain)
+        score = sklearn.metrics.f1_score(ytrain, clf.predict(Xtrain))
         #score = scorer.mean_similarity(model)
 
         print ('After %i epochs, score is' % (ei + 1)), score
     
 
+    ######################### Learn n_epochs for needed for prediction ######## 
+    
+    # We want to know how many epochs to train our test data with before their
+    # paragraph vectors converge. To do this, we train our CV data and see how
+    # well their paragraph vectors do on the logistic classifier
+
+    #model.train_words = False  # Freeze weights of word vector learning
+
+    ## Stop training when score drops below prev iteration
+    #prev_score = 0  
+    #for ei in range(n_epochs):
+        #model.train(LScv)
+
+        ## Construct matrix of feature vectors of CV sentences
+        #Xcv = np.vstack([model[sentence.labels[0]] for sentence in LScv])
+        #curr_score = clf.score(Xcv, ycv)
+
+        ## No. of epochs is one less than when score starts to drop
+        #if curr_score < prev_score:
+            #break
+
+        #prev_score = curr_score
+
+    #n_epochs_test = ei  # no. epochs during test time
+                        ## recall that epoch index starts from zero
+                        ## so we don't need to decrement it here
+
+
     ######################### Test time: predict test sentences ############### 
 
     # Generate vector representation of test sentences
-    model.train_words = False  # Freeze weights for word vector learning
+    model.train_words = False  # Freeze weights of word vector learning
 
+    n_epochs_test = n_epochs
     if verbose:
-        print 'Testing over', n_epochs, 'epochs'
-    for ei in range(n_epochs):
+        print 'Testing over', n_epochs_test, 'epochs'
+    for ei in range(n_epochs_test):
         model.train(LStest)
 
     # Construct matrix of test sentences
