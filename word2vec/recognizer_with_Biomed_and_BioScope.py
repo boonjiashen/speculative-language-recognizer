@@ -63,6 +63,20 @@ def print_confusion_matrix(y_true, y_pred):
             ['is_1', str(cm[1, 0]), str(cm[1, 1])],
             ]
 
+    print_matrix_of_strings(table)
+
+
+def print_matrix_of_strings(table):
+    """Pretty-print a list of list of strings.
+
+    Each string can be of different lengths. For each column, the elements will
+    be right-justified.
+
+    >>> print_matrix_of_strings([['a', 'dog'], ['two', 'camels']])
+      a    dog
+    two camels
+    """
+
     # Measure largest field width in table, for printing
     field_width = max([len(elem) for row in table for elem in row])
 
