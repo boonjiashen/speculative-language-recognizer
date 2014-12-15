@@ -223,17 +223,22 @@ if __name__ == "__main__":
                         # Without the identifiers of the test set we cannot run
                         # prediction on the test set. Strange API behavior.
 
-    # Train doc2vec model, for one epoch
-    n_epochs = 50
+    # Train doc2vec model until F1 score on logistic classifier drops
+    # We use the classifier as a surrogate for a validation set
+    MAX_EPOCHS = 1000  # maximum training epochs
     if verbose:
         print 'Training with %i Biomed sentences and %i BioScope sentences' %  \
                 (n_unlabeled_examples, n_labeled_examples)
     clf = sklearn.linear_model.LogisticRegression()
     prev_score = -1
-    for ei in range(n_epochs):
+    for ei in range(MAX_EPOCHS):
+
+        # We want the learning rate to be small to ensure the model is
+        # converging
         model.alpha = model.min_alpha = 0.01
         model.train(LStrain_classy + LStrain_classless)
 
+        # See how well the doc2vec model does on the logistic classifier
         Xtrain = np.vstack(
                 [model[sentence.labels[0]] for sentence in
                 LStrain_classy])
@@ -242,6 +247,7 @@ if __name__ == "__main__":
 
         print ('After %i epochs, score is' % (ei + 1)), score
 
+        # Stop training once the score just goes past its peak
         if score < prev_score:
             break
 
@@ -264,7 +270,6 @@ if __name__ == "__main__":
     model.train_words = False  # Freeze weights of word vector learning
 
     n_test_epochs = 50
-    n_test_epochs = 1
     if verbose:
         print 'Testing over', n_test_epochs, 'epochs'
     for ei in range(n_test_epochs):
