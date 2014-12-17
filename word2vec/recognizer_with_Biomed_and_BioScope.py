@@ -116,9 +116,9 @@ def load_preprocessed_BioScope(filename):
 
 if __name__ == "__main__":
 
-    #logging.basicConfig(
-            #format='%(asctime)s : %(levelname)s : %(message)s',
-            #level=logging.INFO)
+    logging.basicConfig(
+            format='%(asctime)s : %(levelname)s : %(message)s',
+            level=logging.INFO)
 
     random.seed(0)
 
