@@ -21,6 +21,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('input_filename', type=str)
+    parser.add_argument('--plotROC', action='store_true',
+            help='Plot ROC instead of PR (default: plot PR)')
 
     args = parser.parse_args()
 
@@ -47,15 +49,26 @@ if __name__ == "__main__":
         labels = [int(x) for x in labels.strip().split()]
         confidences = np.loadtxt(StringIO.StringIO(confidences))
 
-        # Get precision, recall curve and plot it
-        precision, recall, _ = sklearn.metrics.precision_recall_curve(labels,
-                confidences)
-        plt.plot(recall, precision, label=curve_name)
+        if args.plotROC:
 
+            # Get ROC coordinates and plot it
+            fpr, tpr, _ = sklearn.metrics.roc_curve(labels, confidences)
+            plt.plot(fpr, tpr, label=curve_name)
+
+        else:
+            # Get precision, recall curve and plot it
+            precision, recall, _ = sklearn.metrics.precision_recall_curve(labels,
+                    confidences)
+            plt.plot(recall, precision, label=curve_name)
+
+    # Prettify plot
     plt.legend(loc='best')
     plt.xlim(xmin=0)  # set axes to cut through origin
     plt.ylim(ymin=0)
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-
+    if args.plotROC:
+        plt.xlabel('FPR')
+        plt.ylabel('TPR')
+    else:
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
     plt.show()
