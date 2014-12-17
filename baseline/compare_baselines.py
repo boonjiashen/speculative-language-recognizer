@@ -13,11 +13,11 @@ import codecs
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn import metrics
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
+import sklearn.metrics
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
@@ -34,9 +34,9 @@ if __name__ == "__main__":
     parser.add_argument('input_filename', type=str,
             help='pre-processed data file containing labeled sentences')
 
-    # Add optional argument of output filename
+    # Option to save prediction confidence levels
     parser.add_argument('--save', dest='output_filename', type=str,
-            help='Output filename to save ROC curves to (default: does not save)')
+            help='Output filename to save confidence of predictions to (default: does not save)')
 
     # Option to plot ROC curves
     parser.add_argument('--plot', dest='doplot', action='store_true',
@@ -131,9 +131,9 @@ if __name__ == "__main__":
         predictions = clf.predict(Stest)
 
         # Calculate performance metrics
-        f1 = metrics.f1_score(ytest, predictions)
-        precision = metrics.precision_score(ytest, predictions)
-        recall = metrics.recall_score(ytest, predictions)
+        f1 = sklearn.metrics.f1_score(ytest, predictions)
+        precision = sklearn.metrics.precision_score(ytest, predictions)
+        recall = sklearn.metrics.recall_score(ytest, predictions)
 
         # Width of 1st column for printing
         field_width = max(map(len, zip(*named_pipelines)[0]))
@@ -155,23 +155,41 @@ if __name__ == "__main__":
                 assert False
         conf_lists.append(confidences)
 
-        # Generate data for ROC
-        fpr, tpr, _ = metrics.roc_curve(ytest, confidences)
-
-        # Save data in list
-        named_fpr_tpr.append((pipeline_name, fpr, tpr))
-
 
     #################### Plot data ############################################
 
     if args.doplot:
+
+        # Get names of pipelines to label plots
+        pipeline_names = [name for name, pipeline in named_pipelines]
+
+        # Plot ROC curves
         plt.figure()
-        for pipeline_name, fpr, tpr in named_fpr_tpr:
+        for pipeline_name, confidences in zip(pipeline_names, conf_lists):
+            fpr, tpr, _ = sklearn.metrics.roc_curve(ytest, confidences)
             plt.plot(fpr, tpr, label=pipeline_name)
+
+        # Prettify ROC curve figure
         plt.legend(loc='best')
         plt.xlabel('TPR')
         plt.ylabel('FPR')
         plt.title('ROC curves of baseline algorithms')
+
+        # Plot precision recall curves
+        plt.figure()
+        for pipeline_name, confidences in zip(pipeline_names, conf_lists):
+            precision, recall, _ = sklearn.metrics.precision_recall_curve(
+                    ytest, confidences)
+            plt.plot(recall, precision, label=pipeline_name)
+
+        # Prettify PR curve figure
+        plt.legend(loc='best')
+        plt.xlim(xmin=0)  # set axes to cut through origin
+        plt.ylim(ymin=0)
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Precision-recall curves of baseline algorithms')
+
         plt.show()
 
 
@@ -181,8 +199,8 @@ if __name__ == "__main__":
 
         # For each pipeline,
         # Line 1: pipeline name
-        # Line 2: FPR
-        # Line 3: TPR
+        # Line 2: list of labels (truths 0 or 1)
+        # Line 3: confidence levels
         fid = open(output_filename, 'w')
         for pipeline_name, fpr, tpr in named_fpr_tpr:
             fid.write(pipeline_name)
