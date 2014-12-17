@@ -83,10 +83,10 @@ if __name__ == "__main__":
             #('SVM with RBF kernel', RBF_SVM),
             ('NB', NB_method)]
 
-    # Each named pipeline is a (description, pipeline) 2-ple.
     # Each pipeline is 1 or more transforms on a sentence, followed by a
-    # classification.
-    named_pipelines = []
+    # classifier.
+    # A pipeline name is a string that describes a pipeline
+    pipelines, pipeline_names = [], []
     for binarize_word_counts in [True, ]:  # Word count or word presence
     #for binarize_word_counts in [True, ]  # Word count or word presence
         for clf_name, clf_method in named_clf_methods:
@@ -113,16 +113,18 @@ if __name__ == "__main__":
                 name = ' -> '.join(zip(*named_transforms)[0])
 
                 # Append to the list of pipelines
-                named_pipeline = (name, Pipeline(named_transforms))
-                named_pipelines.append(named_pipeline)
+                pipelines.append(Pipeline(named_transforms))
+                pipeline_names.append(name)
 
 
     ######################### Train and test each algorithm ###################
 
+    # Width of 1st column when printing classification performance
+    field_width = max(map(len, pipeline_names)) 
+
     clfs = []  # Store classifiers in case we want to use them in ipython
     conf_lists = []  # list of confidence for each classifier
-    named_fpr_tpr = []  # list of (name, fpr, tpr) tuples
-    for pipeline_name, pipeline in named_pipelines:
+    for pipeline_name, pipeline in zip(pipeline_names, pipelines):
 
         # Train classifier
         clf = pipeline.fit(Strain, ytrain)
@@ -135,9 +137,6 @@ if __name__ == "__main__":
         precision = sklearn.metrics.precision_score(ytest, predictions)
         recall = sklearn.metrics.recall_score(ytest, predictions)
 
-        # Width of 1st column for printing
-        field_width = max(map(len, zip(*named_pipelines)[0]))
-
         # Print performance metrics
         print 'Pipeline:', \
             (('%-' + str(field_width) + 's') % pipeline_name),  \
@@ -146,6 +145,8 @@ if __name__ == "__main__":
             ' | recall = %.3f' % recall 
 
         # Get confidence values on test set
+        # Use predict_prob() or decision_function() if the former
+        # doesn't exist
         try:
             confidences = clf.predict_proba(Stest)[:, 1]
         except AttributeError:
@@ -159,9 +160,6 @@ if __name__ == "__main__":
     #################### Plot data ############################################
 
     if args.doplot:
-
-        # Get names of pipelines to label plots
-        pipeline_names = [name for name, pipeline in named_pipelines]
 
         # Plot ROC curves
         plt.figure()
