@@ -200,9 +200,10 @@ if __name__ == "__main__":
         # Line 2: list of labels (truths 0 or 1)
         # Line 3: confidence levels
         fid = open(output_filename, 'w')
-        for pipeline_name, fpr, tpr in named_fpr_tpr:
+        for pipeline_name, confidences in zip(pipeline_names, conf_lists):
             fid.write(pipeline_name)
             fid.write('\n')
-            np.savetxt(fid, fpr, newline=' ', footer='\n', comments='')
-            np.savetxt(fid, tpr, newline=' ', footer='\n', comments='')
+            np.savetxt(fid, ytest, fmt='%i', newline=' ', footer='\n',
+                    comments='')
+            np.savetxt(fid, confidences, newline=' ', footer='\n', comments='')
         fid.close()
