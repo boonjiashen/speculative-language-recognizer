@@ -41,6 +41,7 @@ import sklearn.tree
 import sklearn.linear_model
 import sklearn.metrics
 import utils
+import matplotlib.pyplot as plt
 from Word2VecScorer import Word2VecScorer
 from Biomed_word2vec import yield_file_contents, yield_tokenized_sentences
 
@@ -115,15 +116,18 @@ def load_preprocessed_BioScope(filename):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(
-            format='%(asctime)s : %(levelname)s : %(message)s',
-            level=logging.INFO)
+    #logging.basicConfig(
+            #format='%(asctime)s : %(levelname)s : %(message)s',
+            #level=logging.INFO)
 
     random.seed(0)
 
     ######################## Parse command-line arguments ##################### 
 
-    parser = utils.get_parser()
+    parser = argparse.ArgumentParser()
+
+    default_max_epochs=1000
+    default_min_word_count=5
 
     # Add required argument of training data
     parser.add_argument('BioScope_file', type=str,
@@ -137,15 +141,38 @@ if __name__ == "__main__":
     parser.add_argument('n_Biomed_articles', metavar='n_articles', type=int,
            help='number of Biomed articles to be used as training data')
 
+    # Add argument for max number of training epochs
+    msg = "max number of training epochs (default=%i)" % default_max_epochs
+    parser.add_argument(
+            "--max_epochs", type=int,
+            help=msg, default=default_max_epochs
+            )
+
+    # Add argument for more verbose stdout
+    parser.add_argument("-v", "--verbose",
+            help="print status during program execution", action="store_true")
+
+    # Min count to allow a word in the vocabulary
+    parser.add_argument('--min_count', type=int,
+            help='min count to allow a word in the vocabulary (default=' +
+            str(default_min_word_count) + ')',
+            default=default_min_word_count,
+            )
+
+    # Option to save prediction confidence levels
+    parser.add_argument('--save', dest='output_filename', type=str,
+            help='Output filename to save confidence of predictions to (default: does not save)')
+
+    # Option to plot precision-recall curves
+    parser.add_argument('--plot', action='store_true',
+            help='Plot precision-recall curve of classifier (default: does not plot)')
+
     # Grab arguments from stdin
     args = parser.parse_args()
 
-    # Check that the expected arguments are in args
-    expected_args = ['min_count', 'verbose', 'debug']
-    assert set(expected_args) <= set(args.__dict__)
-
     # Convert parsed inputs into local variables
     locals().update(args.__dict__)
+    MAX_EPOCHS = args.max_epochs
     min_word_count = min_count
 
 
@@ -239,7 +266,6 @@ if __name__ == "__main__":
 
     # Train doc2vec model until F1 score on logistic classifier drops
     # We use the classifier as a surrogate for a validation set
-    MAX_EPOCHS = 1000  # maximum training epochs
     if verbose:
         print 'Training with %i Biomed sentences and %i BioScope sentences' %  \
                 (n_unlabeled_examples, n_labeled_examples)
@@ -296,6 +322,36 @@ if __name__ == "__main__":
     # Predict speculative or not
     predictions = clf.predict(Xtest)
 
+
+    #################### Save and plot precision-recall curves ################ 
+
+    # Generate confidence levels of predictions to plot PR curve or save in
+    # file
+    if args.plot or args.output_filename:
+        confidences = clf.decision_function(Xtest)
+
+        # Plot precision-recall curve
+        if args.plot:
+            precision, recall, _ = sklearn.metrics.precision_recall_curve(
+                    ytest, confidences)
+            
+            plt.figure()
+            plt.plot(recall, precision)
+            plt.xlim(xmin=0)  # set axes to cut through origin
+            plt.ylim(ymin=0)
+            plt.xlabel('Recall')
+            plt.ylabel('Precision')
+            plt.show()
+
+        # Append labels and confidences to output file
+        # First append a list of labels
+        # Then append a list of confidences
+        if args.output_filename:
+            fid = open(args.output_filename, 'a')
+            np.savetxt(fid, ytest, fmt='%i', newline=' ', footer='\n',
+                    comments='')
+            np.savetxt(fid, confidences, newline=' ', footer='\n', comments='')
+            fid.close()
 
     ######################### Print classification metrices ###################
 
